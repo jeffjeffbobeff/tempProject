@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "305925294559",
+    "project_id": "murdermysterygame-c3ece",
+    "storage_bucket": "murdermysterygame-c3ece.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:305925294559:android:ca0f5470db70e023915c6a",
+        "android_client_info": {
+          "package_name": "com.murdermysterygame"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDO5BEplKHuFmuFIM5QEY6ea0GlIX_yT04"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
