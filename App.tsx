@@ -75,7 +75,7 @@ export default function App() {
   const [gameId, setGameId] = useState(null);
   const [selectedGameScript, setSelectedGameScript] = useState(null);
   const [gameSubscription, setGameSubscription] = useState(null);
-  const [gameData, setGameData] = useState(null);
+  const [gameData, setGameData] = useState<any>(null);
   const [selectedCharacter, setSelectedCharacter] = useState(null);
   const [gameCode, setGameCode] = useState('');
   const [joinInputError, setJoinInputError] = useState('');
@@ -297,8 +297,11 @@ export default function App() {
                   // Get the game data from Firebase
                   if (firebaseService.db) {
                     const gameDoc = await firebaseService.db.collection('games').doc(newGameId).get();
-                    if (gameDoc._exists) {
-                      setGameData(gameDoc._data);
+                    if (gameDoc.exists) {
+                      const data = gameDoc.data();
+                      if (data) {
+                        setGameData(data);
+                      }
                     }
                   }
                   
@@ -344,39 +347,100 @@ export default function App() {
             />
           )}
           
-          {view === VIEWS.LOBBY && (
-            <LobbyView
-              gameId={gameId}
-              gameData={gameData}
-              userId={username || 'anonymous'}
-              dynamicStyles={dynamicStyles}
-              isHost={true} // TODO: Check if user is actually host
-              onCopyGameCode={() => {
-                console.log('Copying game code:', gameId);
-                // TODO: Implement clipboard copy
-              }}
-              onAddVirtualPlayer={(character) => {
-                console.log('Adding virtual player:', character.characterName);
-                // TODO: Implement virtual player addition
-              }}
-              availableCharactersForVirtuals={[]} // TODO: Get available characters
-              onStartGame={() => {
-                console.log('Starting game...');
-                // TODO: Implement game start logic
+          {view === VIEWS.LOBBY && (() => {
+            // Helper: get current player
+            const getCurrentPlayer = () => {
+              if (!gameData?.players || !username) return null;
+              if (!Array.isArray(gameData.players)) return null;
+              return gameData.players.find(p => p.userId === username);
+            };
+
+            // Helper: is host
+            const isHost = () => {
+              const player = getCurrentPlayer();
+              return player && player.isHost;
+            };
+
+            // Helper: get available characters for virtuals
+            const getAvailableCharactersForVirtuals = () => {
+              if (!gameData || !gameData.players) return [];
+              if (!Array.isArray(gameData.players)) return [];
+              const assignedCharacters = gameData.players.filter(p => p.characterName).map(p => p.characterName);
+              return gameScriptService.getCharacters(gameData.gameScriptId).filter(character => {
+                return !assignedCharacters.includes(character.characterName);
+              });
+            };
+
+            // Helper: can start game
+            const minPlayers = gameScriptService.getGameScript(gameData?.gameScriptId)?.gameFlow?.minPlayers || 8;
+            const maxPlayers = gameScriptService.getGameScript(gameData?.gameScriptId)?.gameFlow?.maxPlayers || 8;
+            const allPlayersJoined = gameData?.players?.length >= minPlayers;
+            const allCharactersAssigned = gameData?.players?.every(p => p.characterName);
+            const canStartGame = isHost() && allPlayersJoined && allCharactersAssigned;
+
+            // Copy game code
+            const handleCopyGameCode = () => {
+              if (!gameId) return;
+              Clipboard.setString(gameId);
+              alert('Game code copied to clipboard!');
+            };
+
+            // Add virtual player
+            const handleAddVirtualPlayer = async (character) => {
+              if (!gameId) return;
+              try {
+                const charName = character.characterName || character.Character;
+                const userIdVirtual = `player_${charName.replace(/\W/g, '')}`;
+                const username = charName;
+                await firebaseService.joinGame(gameId, userIdVirtual, username);
+                await firebaseService.selectCharacter(gameId, userIdVirtual, charName);
+              } catch (error) {
+                console.error('Error adding virtual player:', error);
+                alert('Failed to add virtual player: ' + (error.message || 'Unknown error'));
+              }
+            };
+
+            // Start game
+            const handleStartGame = async () => {
+              if (!gameId) return;
+              try {
+                await firebaseService.startGame(gameId);
+                // Force navigation to INTRODUCTION view when game starts
                 setView(VIEWS.INTRODUCTION);
-              }}
-              canStartGame={true} // TODO: Check if game can start
-              onChangeCharacter={() => {
-                console.log('Changing character...');
-                setView(VIEWS.CHARACTER_SELECTION);
-              }}
-              onBackToHome={() => {
-                console.log('Going back to home...');
-                goHome();
-              }}
-              scrollViewRef={lobbyScrollViewRef}
-            />
-          )}
+              } catch (error) {
+                console.error('Error in startGame:', error);
+                alert('Cannot Start Game: ' + (error.message || 'Failed to start game.'));
+              }
+            };
+
+            // Change character
+            const handleChangeCharacter = () => {
+              setView(VIEWS.CHARACTER_SELECTION);
+            };
+
+            // Back to home
+            const handleBackToHome = () => {
+              goHome();
+            };
+
+            return (
+              <LobbyView
+                gameId={gameId}
+                gameData={gameData}
+                userId={username || 'anonymous'}
+                dynamicStyles={dynamicStyles}
+                isHost={isHost()}
+                onCopyGameCode={handleCopyGameCode}
+                onAddVirtualPlayer={handleAddVirtualPlayer}
+                availableCharactersForVirtuals={getAvailableCharactersForVirtuals()}
+                onStartGame={handleStartGame}
+                canStartGame={canStartGame}
+                onChangeCharacter={handleChangeCharacter}
+                onBackToHome={handleBackToHome}
+                scrollViewRef={lobbyScrollViewRef}
+              />
+            );
+          })()}
           
           {view === VIEWS.INTRODUCTION && (
             <IntroductionView
