@@ -54,6 +54,7 @@ class FirebaseService {
         
         // Try to get the Firestore instance directly
         const firestoreInstance = firestore();
+        console.log('🔧 firestore() returned:', typeof firestoreInstance, firestoreInstance);
         
         // Test if we can actually use it
         if (firestoreInstance && typeof firestoreInstance.collection === 'function') {
@@ -65,6 +66,7 @@ class FirebaseService {
           
           return true; // Return true on successful initialization
         } else {
+          console.log('🔧 firestoreInstance.collection is not a function:', typeof firestoreInstance.collection);
           throw new Error('Firestore instance is not properly initialized');
         }
       } catch (error) {
@@ -80,6 +82,46 @@ class FirebaseService {
         }
       }
     }
+  }
+
+  // Test Firebase connectivity
+  async testFirebaseConnection() {
+    try {
+      if (!this.db) {
+        throw new Error('Firebase not initialized');
+      }
+      
+      console.log('🔧 Testing Firebase connection...');
+      
+      // Try a simple read operation
+      const testDoc = await this.db.collection('games').limit(1).get();
+      console.log('🔧 Firebase test successful, docs count:', testDoc.docs.length);
+      
+      return true;
+    } catch (error) {
+      console.error('🔧 Firebase connection test failed:', error);
+      return false;
+    }
+  }
+
+  // Check if Firebase is ready
+  isReady() {
+    return this.db !== null;
+  }
+
+  // Wait for Firebase to be ready
+  async waitForReady(maxWaitTime = 10000) {
+    const startTime = Date.now();
+    
+    while (!this.isReady() && (Date.now() - startTime) < maxWaitTime) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    if (!this.isReady()) {
+      throw new Error('Firebase failed to initialize within the timeout period');
+    }
+    
+    return true;
   }
 
   // Generate a unique game ID (6 characters)
@@ -100,25 +142,39 @@ class FirebaseService {
 
   // Generate a unique game ID with collision detection
   async generateUniqueGameId(maxAttempts = 10) {
+    console.log('🔧 generateUniqueGameId called, this.db:', this.db);
+    console.log('🔧 Firebase ready check:', this.isReady());
+    
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       const gameId = this.generateGameId();
+      console.log(`🔧 Attempt ${attempt}: Generated game ID: ${gameId}`);
       
       try {
         // Check if this game ID already exists
+        console.log(`🔧 Checking if ${gameId} exists in database...`);
         const gameDoc = await this.db.collection('games').doc(gameId).get();
+        console.log(`🔧 Game ${gameId} exists:`, gameDoc._exists);
+        console.log(`🔧 gameDoc type:`, typeof gameDoc);
+        console.log(`🔧 gameDoc keys:`, Object.keys(gameDoc));
+        console.log(`🔧 gameDoc._exists type:`, typeof gameDoc._exists);
         
-        if (!gameDoc.exists) {
+        if (!gameDoc._exists) {
           // Game ID is unique, return it
+          console.log(`🔧 Game ID ${gameId} is unique, returning it`);
           return gameId;
         }
         
         // If we're on the last attempt, throw an error
         if (attempt === maxAttempts) {
+          console.log(`🔧 Max attempts reached, throwing error`);
           throw new Error('Unable to generate unique game ID after maximum attempts');
         }
         
         // Continue to next attempt
+        console.log(`🔧 Game ID ${gameId} exists, trying again...`);
       } catch (error) {
+        console.error(`🔧 Error on attempt ${attempt}:`, error);
+        
         // If it's the last attempt, re-throw the error
         if (attempt === maxAttempts) {
           throw error;
@@ -134,8 +190,27 @@ class FirebaseService {
   // Create a new game session with the new data structure
   async createGame(hostUserId, hostUsername, scriptId = 'opera_murder_mystery_v1') {
     try {
+      console.log('🔧 createGame called with:', { hostUserId, hostUsername, scriptId });
+      console.log('🔧 this.db:', this.db);
+      console.log('🔧 Firebase ready check:', this.isReady());
+      
+      // Ensure Firebase is ready
+      if (!this.db) {
+        throw new Error('Firebase is not ready yet. Please wait a moment and try again.');
+      }
+      
+      // Test Firebase connectivity
+      const connectionTest = await this.testFirebaseConnection();
+      if (!connectionTest) {
+        throw new Error('Firebase connection test failed. Please check your internet connection and try again.');
+      }
+      
+      console.log('🔧 Firebase is ready, generating unique game ID...');
       const gameId = await this.generateUniqueGameId();
+      console.log('🔧 Generated game ID:', gameId);
+      
       const gameScript = gameScriptService.getGameScript(scriptId);
+      console.log('🔧 Game script found:', !!gameScript);
       
       if (!gameScript) {
         throw new Error('Invalid game script ID');
@@ -304,17 +379,17 @@ class FirebaseService {
       const gameRef = this.db.collection('games').doc(gameId);
       const gameDoc = await gameRef.get();
       
-      if (!gameDoc.exists) {
+      if (!gameDoc._exists) {
         return null;
       }
       
-      const gameData = gameDoc.data();
+      const gameData = gameDoc._data;
       
       // Get all players
       const playersSnapshot = await gameRef.collection('players').get();
       const players = [];
-      playersSnapshot.forEach(doc => {
-        players.push(doc.data());
+      playersSnapshot.docs.forEach(doc => {
+        players.push(doc._data);
       });
       
       return {
@@ -442,16 +517,16 @@ class FirebaseService {
       const gameRef = this.db.collection('games').doc(gameId);
       const gameDoc = await gameRef.get();
       
-      if (!gameDoc.exists) {
+      if (!gameDoc._exists) {
         throw new Error('Game not found');
       }
       
-      const gameData = gameDoc.data();
+      const gameData = gameDoc._data;
       
       // Check if all required players have joined
       const playersSnapshot = await gameRef.collection('players').get();
-      if (playersSnapshot.size < gameData.minPlayers) {
-        throw new Error(`Cannot start game: Not all players have joined. Need ${gameData.minPlayers} players, have ${playersSnapshot.size}`);
+      if (playersSnapshot.docs.length < gameData.minPlayers) {
+        throw new Error(`Cannot start game: Not all players have joined. Need ${gameData.minPlayers} players, have ${playersSnapshot.docs.length}`);
       }
       
       await gameRef.update({
@@ -485,11 +560,11 @@ class FirebaseService {
       const gameRef = this.db.collection('games').doc(gameId);
       const gameDoc = await gameRef.get();
       
-      if (!gameDoc.exists) {
+      if (!gameDoc._exists) {
         throw new Error('Game not found');
       }
       
-      const gameData = gameDoc.data();
+      const gameData = gameDoc._data;
       const currentRound = gameData.currentRound;
       let nextRound;
       
