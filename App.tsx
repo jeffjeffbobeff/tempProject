@@ -5,129 +5,255 @@
  * @format
  */
 
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
-  SafeAreaView,
-  StyleSheet,
-  Text,
   View,
+  Text,
+  StyleSheet,
+  StatusBar,
+  TouchableOpacity,
+  TextInput,
+  ScrollView,
+  Dimensions,
+  Modal,
 } from 'react-native';
-import {getApps, getApp} from '@react-native-firebase/app';
-import firestore from '@react-native-firebase/firestore';
+import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
+import BackgroundWrapper from './components/BackgroundWrapper';
+import styles from './styles/AppStyles';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import HomeView from './components/views/HomeView';
+import JoinGameView from './components/views/JoinGameView';
+import GameSelectionView from './components/views/GameSelectionView';
+import CharacterSelectionView from './components/views/CharacterSelectionView';
+import IntroductionView from './components/views/IntroductionView';
+import GameView from './components/views/GameView';
+import gameScriptService from './gameScriptService';
+import HamburgerMenu from './components/HamburgerMenu';
+import firebaseService from './firebase';
+import { useDynamicStyles } from './utils/styles';
+import { parseFormattedText } from './utils/textFormatting';
+import LobbyView from './components/views/LobbyView';
+import Clipboard from '@react-native-clipboard/clipboard';
+import MyGamesView from './components/views/MyGamesView';
+import OnboardingView from './components/views/OnboardingView';
 
-function App(): React.JSX.Element {
-  const [firebaseStatus, setFirebaseStatus] = useState<string>('Checking...');
-  const [mostRecentGameId, setMostRecentGameId] = useState<string>('Loading...');
-  const [error, setError] = useState<string>('');
+// ============================================================================
+// CONSTANTS
+// ============================================================================
 
+const VIEWS = {
+  ONBOARDING: 'ONBOARDING',
+  HOME: 'HOME',
+  GAME_SELECTION: 'GAME_SELECTION',
+  LOBBY: 'LOBBY',
+  INTRODUCTION: 'INTRODUCTION',
+  GAME: 'GAME',
+  JOIN_GAME: 'JOIN_GAME',
+  CHARACTER_SELECTION: 'CHARACTER_SELECTION',
+  MY_GAMES: 'MY_GAMES',
+};
+
+export default function App() {
+  // ============================================================================
+  // STATE MANAGEMENT
+  // ============================================================================
+  
+  // Navigation state
+  const [view, setView] = useState(VIEWS.HOME);
+  const [loading, setLoading] = useState(true);
+  
+  // User state
+  const [userId, setUserId] = useState(null);
+  const [username, setUsername] = useState('');
+  
+  // Onboarding state
+  const [input, setInput] = useState('');
+  const [inputError, setInputError] = useState('');
+  
+  // Game loading state
+  const [gameLoading, setGameLoading] = useState(false);
+  const [gameId, setGameId] = useState(null);
+  const [selectedGameScript, setSelectedGameScript] = useState(null);
+  const [gameSubscription, setGameSubscription] = useState(null);
+  const [gameData, setGameData] = useState(null);
+  const [selectedCharacter, setSelectedCharacter] = useState(null);
+  const [gameCode, setGameCode] = useState('');
+  const [joinInputError, setJoinInputError] = useState('');
+  
+  // Available game scripts state
+  const [availableGameScripts, setAvailableGameScripts] = useState<any[]>([]);
+
+  // Host control modal states
+  const [showPlayerScriptModal, setShowPlayerScriptModal] = useState(false);
+  const [selectedPlayerForScript, setSelectedPlayerForScript] = useState(null);
+
+  // ScrollView refs for scroll to top functionality
+  const gameScrollViewRef = useRef(null);
+  const lobbyScrollViewRef = useRef(null);
+  const characterSelectionScrollViewRef = useRef(null);
+  const gameSelectionScrollViewRef = useRef(null);
+  const introductionScrollViewRef = useRef(null);
+
+  // Hamburger menu state
+  const [showMenu, setShowMenu] = useState(false);
+  const [showTextSizeModal, setShowTextSizeModal] = useState(false);
+  const [showHowToPlayModal, setShowHowToPlayModal] = useState(false);
+  const [showHowToHostModal, setShowHowToHostModal] = useState(false);
+  const [showFAQModal, setShowFAQModal] = useState(false);
+  const [textSize, setTextSize] = useState('medium');
+
+  // ============================================================================
+  // HOOKS - Must be called in same order every render
+  // ============================================================================
+  
+  // Get dynamic styles - this must be called every render
+  const dynamicStyles = useDynamicStyles(textSize);
+
+  // ============================================================================
+  // INITIALIZATION
+  // ============================================================================
+  
   useEffect(() => {
-    // Test Firebase connection
-    console.log('🔍 Starting Firebase connection test...');
-    
-    try {
-      console.log('🔍 Attempting to get Firebase apps...');
-      let apps = getApps();
-      console.log('🔍 getApps() result:', apps);
-      console.log('🔍 Number of apps:', apps.length);
-      
-      if (apps && apps.length > 0) {
-        console.log('🔍 Firebase apps found, getting first app...');
-        const app = getApp();
-        console.log('🔍 getApp() result:', app);
-        console.log('🔍 App name:', app?.name);
-        
-        setFirebaseStatus('✅ Firebase Connected!');
-        console.log('✅ Firebase app initialized successfully:', app?.name);
-        
-        // Now fetch the most recent game ID
-        fetchMostRecentGameId();
-      } else {
-        console.log('🔍 No Firebase apps found');
-        setFirebaseStatus('❌ Firebase Not Connected - No apps found');
-      }
-    } catch (error) {
-      console.error('🔍 Firebase error occurred:', error);
-      setFirebaseStatus('❌ Firebase Error: ' + (error instanceof Error ? error.message : String(error)));
-    }
+    initializeApp();
   }, []);
 
-  const fetchMostRecentGameId = async () => {
+  const initializeApp = async () => {
     try {
-      console.log('🔍 Fetching most recent game ID...');
+      // Load available game scripts
+      const scripts = gameScriptService.getAvailableScripts();
+      setAvailableGameScripts(scripts);
       
-      // Query the games collection, order by creation time, limit to 1
-      const gamesSnapshot = await firestore()
-        .collection('games')
-        .orderBy('createdAt', 'desc')
-        .limit(1)
-        .get();
-
-      if (!gamesSnapshot.empty) {
-        const mostRecentGame = gamesSnapshot.docs[0];
-        const gameId = mostRecentGame.id;
-        const gameData = mostRecentGame.data();
-        
-        console.log('✅ Most recent game found:', gameId);
-        console.log('✅ Game data:', gameData);
-        
-        setMostRecentGameId(gameId);
-      } else {
-        console.log('ℹ️ No games found in database');
-        setMostRecentGameId('No games found');
+      // Load saved text size
+      const savedTextSize = await AsyncStorage.getItem('textSize');
+      if (savedTextSize) {
+        setTextSize(savedTextSize);
       }
+      
+      setLoading(false);
     } catch (error) {
-      console.error('❌ Error fetching most recent game:', error);
-      setError('Error fetching game: ' + (error instanceof Error ? error.message : String(error)));
-      setMostRecentGameId('Error loading');
+      console.error('Error initializing app:', error);
+      setLoading(false);
     }
   };
 
+  // ============================================================================
+  // NAVIGATION FUNCTIONS
+  // ============================================================================
+  
+  const createGame = () => {
+    setView(VIEWS.GAME_SELECTION);
+  };
+
+  const joinGame = () => {
+    setView(VIEWS.JOIN_GAME);
+  };
+
+  const myGames = () => {
+    setView(VIEWS.MY_GAMES);
+  };
+
+  const onBackToOnboarding = () => {
+    setView(VIEWS.ONBOARDING);
+  };
+
+  // ============================================================================
+  // UTILITY FUNCTIONS
+  // ============================================================================
+  
+  const saveTextSize = async (size: string) => {
+    try {
+      await AsyncStorage.setItem('textSize', size);
+      setTextSize(size);
+      setShowTextSizeModal(false);
+    } catch (error) {
+      console.error('Error saving text size:', error);
+    }
+  };
+
+  const goHome = () => {
+    setView(VIEWS.HOME);
+    setGameId(null);
+    setSelectedGameScript(null);
+    setGameData(null);
+    setSelectedCharacter(null);
+    setGameCode('');
+  };
+
+  // ============================================================================
+  // RENDER
+  // ============================================================================
+  
+  if (loading) {
+    return (
+      <SafeAreaProvider>
+        <SafeAreaView style={styles.container}>
+          <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+            <Text style={styles.header}>Loading...</Text>
+          </View>
+        </SafeAreaView>
+      </SafeAreaProvider>
+    );
+  }
+
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.helloWorld}>Hellow World</Text>
-        <Text style={styles.gameId}>Most Recent Game ID: {mostRecentGameId}</Text>
-        <Text style={styles.status}>Firebase Status: {firebaseStatus}</Text>
-        {error ? <Text style={styles.error}>Error: {error}</Text> : null}
-      </View>
-    </SafeAreaView>
+    <SafeAreaProvider>
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#000000" />
+        
+        {/* Background Wrapper */}
+        <BackgroundWrapper>
+          {/* Main Content */}
+          {view === VIEWS.HOME && (
+            <HomeView
+              username={username}
+              createGame={createGame}
+              joinGame={joinGame}
+              myGames={myGames}
+              gameLoading={gameLoading}
+              dynamicStyles={dynamicStyles}
+              onBackToOnboarding={onBackToOnboarding}
+            />
+          )}
+          
+          {view === VIEWS.GAME_SELECTION && (
+            <GameSelectionView
+              availableGameScripts={availableGameScripts}
+              onBack={() => setView(VIEWS.HOME)}
+              onLaunchGame={(script: any) => {
+                setSelectedGameScript(script);
+                setView(VIEWS.INTRODUCTION);
+              }}
+              gameLoading={gameLoading}
+              dynamicStyles={dynamicStyles}
+              containerOnLayout={() => {}}
+              parentOnLayout={() => {}}
+              scrollViewRef={gameSelectionScrollViewRef}
+            />
+          )}
+          
+          {/* Add other views as we migrate them */}
+          
+          {/* Hamburger Menu - Global */}
+          <HamburgerMenu
+            showMenu={showMenu}
+            setShowMenu={setShowMenu}
+            showTextSizeModal={showTextSizeModal}
+            setShowTextSizeModal={setShowTextSizeModal}
+            showHowToPlayModal={showHowToPlayModal}
+            setShowHowToPlayModal={setShowHowToPlayModal}
+            showHowToHostModal={showHowToHostModal}
+            setShowHowToHostModal={setShowHowToHostModal}
+            showFAQModal={showFAQModal}
+            setShowFAQModal={setShowFAQModal}
+            textSize={textSize}
+            saveTextSize={saveTextSize}
+            goHome={goHome}
+            firebaseService={firebaseService}
+            styles={styles}
+            dynamicStyles={dynamicStyles}
+          />
+        </BackgroundWrapper>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000000',
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  helloWorld: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 40,
-  },
-  gameId: {
-    fontSize: 24,
-    color: '#FFFFFF',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  status: {
-    fontSize: 18,
-    color: '#FFFFFF',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  error: {
-    fontSize: 16,
-    color: '#FF6B6B',
-    textAlign: 'center',
-  },
-});
-
-export default App;

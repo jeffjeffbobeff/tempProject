@@ -1,0 +1,26 @@
+{
+  "metadata": {
+    "scriptId": 3,
+    "title": "Distress on the Orient Express",
+    "version": 1,
+    "description": "A luxury train journey (once again!) turns deadly when a passenger is found murdered in their compartment (they really should hire better security). With the train stranded in the mountains, everyone is a suspect in this classic locked-room mystery. Was it the egg-headed Frenchman? The newlywed adventurers? The old spinster from St. Mary Mead? Or the bestselling murder novelist?",
+    "setting": "Orient Express Train",
+    "timePeriod": "1920s",
+    "difficulty": "Medium",
+    "estimatedDuration": 100,
+    "minPlayers": 7,
+    "maxPlayers": 10,
+    "targetAudience": "10+",
+    "tags": ["train", "luxury", "travel", "locked-room", "international"],
+    "author": "JJ",
+    "createdDate": "6/28/2025",
+    "lastModified": "6/28/2025",
+    "victim": "Countess von Winterstein",
+    "numberOfRounds": 6,
+    "suggestedProps": "none",
+    "suggestedCostume": "1920s attire",
+    "status": "coming_soon",
+    "introduction": "Welcome aboard the Orient Express, the most luxurious train in all of Europe, where elegance meets intrigue and secrets travel first class. Tonight, our journey through the snow-covered mountains has taken a most unexpected turn.\n\nCountess von Winterstein, the wealthy and enigmatic passenger who had been traveling in the exclusive first-class compartment, has been found dead in her private quarters. The circumstances of her demise are as mysterious as the countess herself, and the train has been halted in the middle of nowhere due to an avalanche blocking the tracks.\n\nThe doors of the Orient Express have been sealed. The authorities are stranded on the other side of the mountain pass, but for now, you, the distinguished passengers and crew of this magnificent train, are trapped within these opulent carriages. Each of you carries secrets, motives, and perhaps even the means to have brought about the Countess's untimely end.\n\nIt now falls to you to unravel this railway mystery. Examine the evidence, scrutinize the alibis, and expose the hidden truths. Tonight, the greatest drama will not be in the dining car, but right here, among yourselves, as you determine:\n\nWho killed Countess von Winterstein?"
+  },
+  "characters": []
+} 

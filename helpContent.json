@@ -1,0 +1,48 @@
+{
+  "howToPlay": {
+    "title": "How to Play",
+    "sections": [
+      {
+        "title": "Getting Started",
+        "content": "1. Join a game using the game code from your host\n2. Select your character from the available options\n3. Wait for the host to start the game\n4. Follow the round-by-round instructions"
+      },
+      {
+        "title": "During the Game",
+        "content": "• Read all of your character's scripts for each round. Some information is to be read AFTER you've been accused, be listening for your cue!\n• Click 'I'm Ready' to tell the host you've revealed your information for the round\n• Consider motive, means, and opportunity. Who had all three?"
+      },
+      {
+        "title": "Role Playing",
+        "content": "• Interact with your fellow players. Ask questions and react (in character) to the other players' stories.\n• Improvisation and ad libbing are encouraged but not required\n• Accents (especially bad ones) are encouraged but not required\n• Costumes are encouraged but not required"
+      }
+    ]
+  },
+  "howToHost": {
+    "title": "How to Host",
+    "sections": [
+      {
+        "title": "Creating a Game",
+        "content": "1. Games will stay live until you end them. You can create a game for a house party one month from now!\n2. Tap 'Start New Game' on the home screen\n3. Select a mystery from the available options\n4. Plan your party! Themed food and drinks? Costumes? Decorations? It's up to you!"
+      },
+      {
+        "title": "Sending Invitations",
+        "content": "• Send players links with the game code. If desired tell them which character to play.\n• Ensure they have downloaded the app\n• Ensure that there will be connectivity (wifi or cellular) where you will be playing\n• Use the 'Start Game' button when everyone is ready"
+      },
+      {
+        "title": "Managing the Lobby",
+        "content": "• Monitor who has joined and selected characters\n• Help players who are having trouble joining\n• If you find yourself short a player or two, you can add 'virtual' players to the game. You will be able to see and read their scripts too.\n• Use the 'Start Game' button when everyone is ready"
+      },
+      {
+        "title": "During the Game",
+        "content": "• In a lull, get someone talking. ex. 'And what do you have to say for yourself?'\n• When all players are marked ready, move to the next round"
+      },
+      {
+        "title": "Handling Issues",
+        "content": "• If a player or hosts disconnects, they can rejoin by selecting the game from 'My Games'\n• If needed the host can read a players script for them and/or mark a player as 'Ready' in order to advance to the next round.\n• Be patient and help players who are new to the game"
+      },
+      {
+        "title": "Game Flow",
+        "content": "• When all players are ready, you will be able to advance to the next round\n• Final statements are numbered. Guide the players to reveal their final statements in order\n• Congratulate the players and discuss the mystery"
+      }
+    ]
+  }
+} 

@@ -1,0 +1,24 @@
+{
+  "metadata": {
+    "scriptId": 2,
+    "title": "Murder at the Victorian Manor",
+    "version": 1,
+    "description": "A classic whodunit set in a grand Victorian manor during a stormy night. The wealthy Lord Blackwood is found dead in his study, and the family's dark secrets begin to surface.",
+    "setting": "Blackwood Manor",
+    "timePeriod": "Victorian Era",
+    "difficulty": "Hard",
+    "estimatedDuration": 120,
+    "minPlayers": 6,
+    "maxPlayers": 8,
+    "targetAudience": "12+",
+    "tags": ["manor", "victorian", "family", "inheritance", "secrets"],
+    "author": "JJ",
+    "createdDate": "6/28/2025",
+    "lastModified": "6/28/2025",
+    "victim": "Lord Blackwood",
+    "numberOfRounds": 6,
+    "status": "coming_soon",
+    "introduction": "Welcome to Blackwood Manor, a grand estate where family fortunes are made and lost, and where the shadows of the past cast long fingers into the present. Tonight, our gathering has taken a most unfortunate turn.\n\nLord Blackwood, the wealthy and enigmatic master of this manor, has been found dead in his private study. The circumstances of his demise are as mysterious as the family's dark history, and the manor has been sealed off from the outside world due to a violent storm that has cut off all communication.\n\nThe doors of Blackwood Manor have been sealed. The authorities are stranded on the other side of the flooded bridge, but for now, you, the distinguished guests and family members gathered here tonight, are trapped within these opulent walls. Each of you carries secrets, motives, and perhaps even the means to have brought about Lord Blackwood's untimely end.\n\nIt now falls to you to unravel this gothic mystery. Examine the evidence, scrutinize the alibis, and expose the hidden truths. Tonight, the greatest drama will not be in the drawing room, but right here, among yourselves, as you determine:\n\nWho killed Lord Blackwood?"
+  },
+  "characters": []
+} 

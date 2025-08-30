@@ -1,0 +1,32 @@
+{
+  "faqs": [
+    {
+      "question": "How do I join a game?",
+      "answer": "To join a game, you need the game code from the host. Tap 'Join Game' on the home screen and enter the code. The host can copy the game code by tapping on it in the game lobby."
+    },
+    {
+      "question": "How many players can play?",
+      "answer": "The number of players depends on the game you choose. Check the game details to see the player count for each mystery."
+    },
+    {
+      "question": "What happens if I lose connection?",
+      "answer": "If you lose connection during a game, you can rejoin using the same game code. Your progress and character selection will be saved. The host can also pull up your script for you to read if needed."
+    },
+    {
+      "question": "How long does a game take?",
+      "answer": "Most games take 60-90 minutes to complete. The exact duration is shown in the game details when you select a mystery."
+    },
+    {
+      "question": "What if someone can't make it?",
+      "answer": "If a player can't make it, the host can start the game with virtual players. The host can read the scripts for virtual players."
+    },
+    {
+      "question": "Can I play the same mystery multiple times?",
+      "answer": "The murderer will remain the same. We tested randomizing the murderer to enable multiple play throughs, but testers reported having more fun getting to know new characters and stories."
+    },
+    {
+      "question": "How do I know if I'm the murderer?",
+      "answer": "If you're the murderer, you'll have special instructions on how to play your role and try to avoid being caught."
+    }
+  ]
+} 
