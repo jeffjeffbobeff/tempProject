@@ -294,15 +294,36 @@ export default function App() {
                   setGameId(newGameId);
                   setSelectedGameScript(scriptId);
                   
-                  // Get the game data from Firebase
+                  // Get the updated game data from Firebase (including the host player)
                   if (firebaseService.db) {
                     const gameDoc = await firebaseService.db.collection('games').doc(newGameId).get();
                     if (gameDoc.exists) {
                       const data = gameDoc.data();
                       if (data) {
+                        console.log('🔧 Game data after creation:', data);
+                        console.log('🔧 Players array:', data.players);
                         setGameData(data);
                       }
                     }
+                  }
+                  
+                  // Set up real-time listener for game updates
+                  if (firebaseService.db) {
+                    const unsubscribe = firebaseService.db.collection('games').doc(newGameId)
+                      .onSnapshot((doc) => {
+                        if (doc.exists) {
+                          const data = doc.data();
+                          if (data) {
+                            console.log('🔧 Real-time game update:', data);
+                            setGameData(data);
+                          }
+                        }
+                      }, (error) => {
+                        console.error('Error listening to game updates:', error);
+                      });
+                    
+                    // Store the unsubscribe function
+                    setGameSubscription(() => unsubscribe);
                   }
                   
                   // Navigate to character selection (not introduction)
@@ -329,10 +350,18 @@ export default function App() {
               gameData={gameData}
               userId={username || 'anonymous'}
               dynamicStyles={dynamicStyles}
-              onSelectCharacter={(character) => {
+              onSelectCharacter={async (character) => {
                 console.log('Character selected:', character.characterName);
-                // TODO: Navigate to lobby after character selection
-                setView(VIEWS.LOBBY);
+                try {
+                  // Select the character in Firebase
+                  await firebaseService.selectCharacter(gameId, username || 'anonymous', character.characterName);
+                  console.log('🔧 Character selected in Firebase, navigating to lobby...');
+                  // Navigate to lobby - the real-time listener will update gameData
+                  setView(VIEWS.LOBBY);
+                } catch (error) {
+                  console.error('Error selecting character:', error);
+                  alert('Failed to select character: ' + (error.message || 'Unknown error'));
+                }
               }}
               onKeepCharacter={() => {
                 console.log('Keeping current character');
