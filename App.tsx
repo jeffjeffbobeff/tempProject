@@ -294,28 +294,24 @@ export default function App() {
                   setGameId(newGameId);
                   setSelectedGameScript(scriptId);
                   
-                  // Get the updated game data from Firebase (including the host player)
-                  if (firebaseService.db) {
-                    const gameDoc = await firebaseService.db.collection('games').doc(newGameId).get();
-                    if (gameDoc.exists) {
-                      const data = gameDoc.data();
-                      if (data) {
-                        console.log('🔧 Game data after creation:', data);
-                        console.log('🔧 Players array:', data.players);
-                        setGameData(data);
-                      }
-                    }
+                  // Get the complete game data including players from Firebase
+                  const completeGameData = await firebaseService.getGameData(newGameId);
+                  if (completeGameData) {
+                    console.log('🔧 Complete game data after creation:', completeGameData);
+                    console.log('🔧 Players array:', completeGameData.players);
+                    setGameData(completeGameData);
                   }
                   
                   // Set up real-time listener for game updates
                   if (firebaseService.db) {
                     const unsubscribe = firebaseService.db.collection('games').doc(newGameId)
-                      .onSnapshot((doc) => {
+                      .onSnapshot(async (doc) => {
                         if (doc.exists) {
-                          const data = doc.data();
-                          if (data) {
-                            console.log('🔧 Real-time game update:', data);
-                            setGameData(data);
+                          // Get the complete game data including players
+                          const updatedGameData = await firebaseService.getGameData(newGameId);
+                          if (updatedGameData) {
+                            console.log('🔧 Real-time game update with players:', updatedGameData);
+                            setGameData(updatedGameData);
                           }
                         }
                       }, (error) => {
@@ -353,9 +349,14 @@ export default function App() {
               onSelectCharacter={async (character) => {
                 console.log('Character selected:', character.characterName);
                 try {
-                  // Select the character in Firebase
+                  // First, ensure the player is in the game
+                  await firebaseService.joinGame(gameId, username || 'anonymous', username || 'Anonymous Player');
+                  console.log('🔧 Player joined game, now selecting character...');
+                  
+                  // Then select the character
                   await firebaseService.selectCharacter(gameId, username || 'anonymous', character.characterName);
                   console.log('🔧 Character selected in Firebase, navigating to lobby...');
+                  
                   // Navigate to lobby - the real-time listener will update gameData
                   setView(VIEWS.LOBBY);
                 } catch (error) {
