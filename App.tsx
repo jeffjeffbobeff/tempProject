@@ -107,6 +107,11 @@ export default function App() {
   // Available game scripts state
   const [availableGameScripts, setAvailableGameScripts] = useState<GameScript[]>([]);
 
+  // My Games state
+  const [myGamesData, setMyGamesData] = useState<any[]>([]);
+  const [myGamesLoading, setMyGamesLoading] = useState(false);
+  const [myGamesFilter, setMyGamesFilter] = useState('all');
+
   // Host control modal states
   const [showPlayerScriptModal, setShowPlayerScriptModal] = useState(false);
   const [selectedPlayerForScript, setSelectedPlayerForScript] = useState<any>(null);
@@ -258,8 +263,119 @@ export default function App() {
     }
   };
 
-  const myGames = () => {
+  const myGames = async () => {
     setView(VIEWS.MY_GAMES);
+    await loadMyGames();
+  };
+
+  // Load user's games from Firebase
+  const loadMyGames = async () => {
+    if (!username) return;
+    
+    try {
+      setMyGamesLoading(true);
+      // For now, we'll use a mock implementation since proper user game tracking isn't implemented yet
+      // This can be enhanced later with proper Firebase queries
+      const mockGames = [
+        {
+          gameId: 'DEMO1',
+          gameData: {
+            gameScriptId: '1',
+            status: 'LOBBY',
+            hostUserId: username,
+            players: [{ userId: username, username }],
+            currentRound: 0
+          },
+          role: 'host'
+        }
+      ];
+      setMyGamesData(mockGames);
+    } catch (error: any) {
+      console.error('Error loading my games:', error);
+      Alert.alert('Error', 'Failed to load your games');
+    } finally {
+      setMyGamesLoading(false);
+    }
+  };
+
+  // Handle going to a specific game
+  const handleGoToGame = async (game: any) => {
+    try {
+      setGameId(game.gameId);
+      setSelectedGameScript(game.gameData?.gameScriptId);
+      
+      // Get current game data
+      const currentGameData = await firebaseService.getGameData(game.gameId);
+      if (currentGameData) {
+        setGameData(currentGameData);
+        
+        // Set up real-time subscription
+        const subscription = firebaseService.subscribeToGame(game.gameId, (data: any) => {
+          setGameData(data);
+        });
+        setGameSubscription(() => subscription);
+        
+        // Navigate based on game status
+        if (currentGameData.status === 'LOBBY') {
+          setView(VIEWS.LOBBY);
+        } else if (currentGameData.status === 'IN_PROGRESS') {
+          if (currentGameData.currentRound === 1) {
+            setView(VIEWS.INTRODUCTION);
+          } else {
+            setView(VIEWS.GAME);
+          }
+        } else {
+          setView(VIEWS.LOBBY); // Fallback
+        }
+      }
+    } catch (error: any) {
+      console.error('Error going to game:', error);
+      Alert.alert('Error', 'Failed to join game');
+    }
+  };
+
+  // Handle inviting others to a game
+  const handleInviteToGame = (game: any) => {
+    if (game.gameId) {
+      Clipboard.setString(game.gameId);
+      Alert.alert('Success', 'Game code copied to clipboard!');
+    }
+  };
+
+  // Handle deleting a game (host only)
+  const handleDeleteGame = async (game: any) => {
+    if (!game.gameId) return;
+    
+    try {
+      await firebaseService.softDeleteGame(game.gameId, username || 'anonymous');
+      Alert.alert('Success', 'Game deleted successfully');
+      await loadMyGames(); // Refresh the list
+    } catch (error: any) {
+      console.error('Error deleting game:', error);
+      Alert.alert('Error', 'Failed to delete game');
+    }
+  };
+
+  // Wrapper functions for MyGamesView compatibility
+  const handleGoToGameWrapper = () => {
+    // This will be called when the Go button is pressed
+    // The actual game data will be passed through context or we'll need to modify the component
+    console.log('Go button pressed - need to implement game selection');
+  };
+
+  const handleInviteToGameWrapper = () => {
+    // This will be called when the Invite button is pressed
+    console.log('Invite button pressed - need to implement game selection');
+  };
+
+  const handleDeleteGameWrapper = () => {
+    // This will be called when the Delete button is pressed
+    console.log('Delete button pressed - need to implement game selection');
+  };
+
+  const handleSetMyGamesFilterWrapper = () => {
+    // This will be called when filter is changed
+    console.log('Filter changed - need to implement filter selection');
   };
 
   const onBackToOnboarding = () => {
@@ -681,6 +797,20 @@ export default function App() {
               onBack={() => setView(VIEWS.HOME)}
               gameLoading={gameLoading}
               inputError={joinInputError}
+              dynamicStyles={dynamicStyles}
+            />
+          )}
+          
+          {view === VIEWS.MY_GAMES && (
+            <MyGamesView
+              myGames={myGamesData}
+              myGamesLoading={myGamesLoading}
+              myGamesFilter={myGamesFilter}
+              setMyGamesFilter={handleSetMyGamesFilterWrapper}
+              onGo={handleGoToGameWrapper}
+              onInvite={handleInviteToGameWrapper}
+              onDelete={handleDeleteGameWrapper}
+              onBack={() => setView(VIEWS.HOME)}
               dynamicStyles={dynamicStyles}
             />
           )}
