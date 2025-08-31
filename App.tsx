@@ -253,23 +253,35 @@ export default function App() {
         
         // Auto-navigate based on game status changes (for non-host players)
         // Only auto-navigate if we're not already in the correct view
+        // AND if the player has a character assigned (except for character selection)
+        
+        // Check if current player has a character assigned
+        const currentPlayer = data?.players?.find((p: any) => p.userId === username);
+        const hasCharacter = currentPlayer && currentPlayer.characterName;
+        
         if (data?.status === 'IN_PROGRESS') {
           // If game is in progress, navigate to appropriate view based on current round
-          if (data?.currentRound === 1 && view !== VIEWS.INTRODUCTION) {
+          if (data?.currentRound === 1 && view !== VIEWS.INTRODUCTION && hasCharacter) {
             console.log('🔧 Auto-navigating to INTRODUCTION (Round 1)');
             setView(VIEWS.INTRODUCTION);
-          } else if (data?.currentRound > 1 && view !== VIEWS.GAME) {
+          } else if (data?.currentRound > 1 && view !== VIEWS.GAME && hasCharacter) {
             console.log('🔧 Auto-navigating to GAME (Round', data.currentRound, ')');
             setView(VIEWS.GAME);
           }
-        } else if (data?.status === 'LOBBY' && view !== VIEWS.LOBBY) {
-          // If game is back in lobby, navigate to lobby
+        } else if (data?.status === 'LOBBY' && view !== VIEWS.LOBBY && hasCharacter) {
+          // If game is back in lobby, navigate to lobby (only if player has character)
           console.log('🔧 Auto-navigating to LOBBY');
           setView(VIEWS.LOBBY);
-        } else if ((data?.status === 'COMPLETED' || data?.currentRound === 7) && view !== VIEWS.GAME) {
+        } else if ((data?.status === 'COMPLETED' || data?.currentRound === 7) && view !== VIEWS.GAME && hasCharacter) {
           // If game is completed, navigate to game view (which shows end screen for round 7)
           console.log('🔧 Auto-navigating to GAME (completed)');
           setView(VIEWS.GAME);
+        }
+        
+        // If player doesn't have a character, they should stay in CHARACTER_SELECTION
+        if (!hasCharacter && view !== VIEWS.CHARACTER_SELECTION) {
+          console.log('🔧 Player has no character, staying in CHARACTER_SELECTION');
+          setView(VIEWS.CHARACTER_SELECTION);
         }
       });
       setGameSubscription(() => subscription);
@@ -322,23 +334,35 @@ export default function App() {
           
           // Auto-navigate based on game status changes (for non-host players)
           // Only auto-navigate if we're not already in the correct view
+          // AND if the player has a character assigned (except for character selection)
+          
+          // Check if current player has a character assigned
+          const currentPlayer = data?.players?.find((p: any) => p.userId === username);
+          const hasCharacter = currentPlayer && currentPlayer.characterName;
+          
           if (data?.status === 'IN_PROGRESS') {
             // If game is in progress, navigate to appropriate view based on current round
-            if (data?.currentRound === 1 && view !== VIEWS.INTRODUCTION) {
+            if (data?.currentRound === 1 && view !== VIEWS.INTRODUCTION && hasCharacter) {
               console.log('🔧 MyGames auto-navigating to INTRODUCTION (Round 1)');
               setView(VIEWS.INTRODUCTION);
-            } else if (data?.currentRound > 1 && view !== VIEWS.GAME) {
+            } else if (data?.currentRound > 1 && view !== VIEWS.GAME && hasCharacter) {
               console.log('🔧 MyGames auto-navigating to GAME (Round', data.currentRound, ')');
               setView(VIEWS.GAME);
             }
-          } else if (data?.status === 'LOBBY' && view !== VIEWS.LOBBY) {
-            // If game is back in lobby, navigate to lobby
+          } else if (data?.status === 'LOBBY' && view !== VIEWS.LOBBY && hasCharacter) {
+            // If game is back in lobby, navigate to lobby (only if player has character)
             console.log('🔧 MyGames auto-navigating to LOBBY');
             setView(VIEWS.LOBBY);
-          } else if ((data?.status === 'COMPLETED' || data?.currentRound === 7) && view !== VIEWS.GAME) {
+          } else if ((data?.status === 'COMPLETED' || data?.currentRound === 7) && view !== VIEWS.GAME && hasCharacter) {
             // If game is completed, navigate to game view (which shows end screen for round 7)
             console.log('🔧 MyGames auto-navigating to GAME (completed)');
             setView(VIEWS.GAME);
+          }
+          
+          // If player doesn't have a character, they should stay in CHARACTER_SELECTION
+          if (!hasCharacter && view !== VIEWS.CHARACTER_SELECTION) {
+            console.log('🔧 MyGames: Player has no character, staying in CHARACTER_SELECTION');
+            setView(VIEWS.CHARACTER_SELECTION);
           }
         });
         setGameSubscription(() => subscription);
@@ -540,23 +564,35 @@ export default function App() {
                     
                     // Auto-navigate based on game status changes (for non-host players)
                     // Only auto-navigate if we're not already in the correct view
+                    // AND if the player has a character assigned (except for character selection)
+                    
+                    // Check if current player has a character assigned
+                    const currentPlayer = data?.players?.find((p: any) => p.userId === username);
+                    const hasCharacter = currentPlayer && currentPlayer.characterName;
+                    
                     if (data?.status === 'IN_PROGRESS') {
                       // If game is in progress, navigate to appropriate view based on current round
-                      if (data?.currentRound === 1 && view !== VIEWS.INTRODUCTION) {
+                      if (data?.currentRound === 1 && view !== VIEWS.INTRODUCTION && hasCharacter) {
                         console.log('🔧 Game creation auto-navigating to INTRODUCTION (Round 1)');
                         setView(VIEWS.INTRODUCTION);
-                      } else if (data?.currentRound > 1 && view !== VIEWS.GAME) {
+                      } else if (data?.currentRound > 1 && view !== VIEWS.GAME && hasCharacter) {
                         console.log('🔧 Game creation auto-navigating to GAME (Round', data.currentRound, ')');
                         setView(VIEWS.GAME);
                       }
-                    } else if (data?.status === 'LOBBY' && view !== VIEWS.LOBBY) {
-                      // If game is back in lobby, navigate to lobby
+                    } else if (data?.status === 'LOBBY' && view !== VIEWS.LOBBY && hasCharacter) {
+                      // If game is back in lobby, navigate to lobby (only if player has character)
                       console.log('🔧 Game creation auto-navigating to LOBBY');
                       setView(VIEWS.LOBBY);
-                    } else if ((data?.status === 'COMPLETED' || data?.currentRound === 7) && view !== VIEWS.GAME) {
+                    } else if ((data?.status === 'COMPLETED' || data?.currentRound === 7) && view !== VIEWS.GAME && hasCharacter) {
                       // If game is completed, navigate to game view (which shows end screen for round 7)
                       console.log('🔧 Game creation auto-navigating to GAME (completed)');
                       setView(VIEWS.GAME);
+                    }
+                    
+                    // If player doesn't have a character, they should stay in CHARACTER_SELECTION
+                    if (!hasCharacter && view !== VIEWS.CHARACTER_SELECTION) {
+                      console.log('🔧 Game creation: Player has no character, staying in CHARACTER_SELECTION');
+                      setView(VIEWS.CHARACTER_SELECTION);
                     }
                   });
                   setGameSubscription(() => subscription);
