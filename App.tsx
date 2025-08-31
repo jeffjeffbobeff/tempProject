@@ -304,7 +304,15 @@ export default function App() {
                   
                   // Set up proper real-time subscription using the service method
                   const subscription = firebaseService.subscribeToGame(newGameId, (data) => {
-                    console.log('🔧 Real-time game update with players:', data);
+                    console.log('🔧 Real-time game update:', {
+                      gameId: data.gameId,
+                      currentRound: data.currentRound,
+                      roundState: data.roundState,
+                      status: data.status,
+                      playersCount: data.players?.length || 0,
+                      playersReady: data.players?.filter(p => p.roundStates?.[1]?.ready).length || 0,
+                      allPlayersReady: data.players?.every(p => p.roundStates?.[1]?.ready) || false
+                    });
                     setGameData(data);
                   });
                   setGameSubscription(() => subscription);
@@ -344,7 +352,13 @@ export default function App() {
                   // Verify the player was actually added
                   const gameDataAfterJoin = await firebaseService.getGameData(gameId);
                   console.log('🔧 Game data after join:', gameDataAfterJoin);
-                  console.log('🔧 Players after join:', gameDataAfterJoin?.players);
+                  console.log('🔧 Players after join:', gameDataAfterJoin?.players?.map(p => ({
+                    userId: p.userId,
+                    username: p.username,
+                    characterName: p.characterName,
+                    isHost: p.isHost,
+                    isReady: p.roundStates?.[1]?.ready || false
+                  })));
                   
                   // Then select the character
                   console.log('🔧 Now selecting character...');
@@ -425,7 +439,13 @@ export default function App() {
                 // Verify the player was actually added
                 const gameDataAfterJoin = await firebaseService.getGameData(gameId);
                 console.log('🔧 Game data after join:', gameDataAfterJoin);
-                console.log('🔧 Players after join:', gameDataAfterJoin?.players);
+                console.log('🔧 Players after join:', gameDataAfterJoin?.players?.map(p => ({
+                  userId: p.userId,
+                  username: p.username,
+                  characterName: p.characterName,
+                  isHost: p.isHost,
+                  isReady: p.roundStates?.[1]?.ready || false
+                })));
                 
                 // Check if the virtual player document actually exists
                 if (firebaseService.db) {
@@ -518,15 +538,42 @@ export default function App() {
             <IntroductionView
               gameId={gameId}
               gameData={gameData}
-              userId={userId}
+              userId={username || 'anonymous'}
               dynamicStyles={dynamicStyles}
               textSize={textSize}
-              onAdvanceToNextRound={() => {
-                // TODO: Implement next round logic
-                console.log('Advancing to next round...');
+              onAdvanceToNextRound={async () => {
+                try {
+                  console.log('🔧 Advancing to next round...');
+                  await firebaseService.advanceRound(gameId);
+                  console.log('🔧 Successfully advanced to next round');
+                } catch (error) {
+                  console.error('🔧 Error advancing round:', error);
+                  alert('Failed to advance round: ' + (error.message || 'Unknown error'));
+                }
+              }}
+              onNavigateToNextView={() => {
+                console.log('🔧 Navigating from Introduction to Game view');
+                setView(VIEWS.GAME);
               }}
               scrollViewRef={introductionScrollViewRef}
             />
+          )}
+          
+          {view === VIEWS.GAME && (
+            <View style={styles.container}>
+              <Text style={dynamicStyles.titleText}>
+                Game Round {gameData?.currentRound || 'Unknown'}
+              </Text>
+              <Text style={dynamicStyles.bodyText}>
+                This is a placeholder for the game view. Round {gameData?.currentRound || 'Unknown'} is in progress.
+              </Text>
+              <TouchableOpacity
+                style={styles.button}
+                onPress={() => setView(VIEWS.HOME)}
+              >
+                <Text style={dynamicStyles.buttonText}>Back to Home</Text>
+              </TouchableOpacity>
+            </View>
           )}
           
           {/* Add other views as we migrate them */}

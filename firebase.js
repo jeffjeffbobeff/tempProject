@@ -227,12 +227,7 @@ class FirebaseService {
         hostUserId,
         hostUsername,
         
-        // Game metadata
-        createdAt: firestore.FieldValue.serverTimestamp(),
-        updatedAt: firestore.FieldValue.serverTimestamp(),
-        startedAt: null,
-        completedAt: null,
-        deletedAt: null, // Soft delete timestamp
+        // Game state
         gameState: 'LOBBY', // LOBBY, IN_PROGRESS, COMPLETED, DELETED
         
         // Game configuration
@@ -269,12 +264,6 @@ class FirebaseService {
       // Create initial host player
       await this.addPlayerToGame(gameId, hostUserId, hostUsername, true);
       
-      // Track user participation (host)
-      await this.trackUserParticipation(gameId, hostUserId, hostUsername, 'host');
-      
-      // Track game creation analytics
-      await this.trackGameCreation(gameId, hostUserId, scriptId, 1);
-      
       return gameId;
     } catch (error) {
       console.error('Error creating game:', error);
@@ -300,12 +289,6 @@ class FirebaseService {
         received: []
       },
       
-      // Game participation
-      joinedAt: Date.now(),
-      leftAt: null,
-      reconnectedAt: null,
-      lastActiveAt: Date.now(),
-      
       // Character-specific data
       characterData: {
         isMurderer: false,
@@ -319,13 +302,7 @@ class FirebaseService {
     
     await playerRef.set(playerData);
     
-    // Update game metadata
-    await gameRef.update({
-      updatedAt: firestore.FieldValue.serverTimestamp()
-    });
     
-    // Track user participation (player)
-    await this.trackUserParticipation(gameId, userId, username, 'player');
     
     return this.getGameData(gameId);
   }
@@ -336,10 +313,6 @@ class FirebaseService {
     const gameRef = this.db.collection('games').doc(gameId);
     const playerRef = gameRef.collection('players').doc(userId);
     await playerRef.delete();
-    // Optionally update game metadata
-    await gameRef.update({
-      updatedAt: firestore.FieldValue.serverTimestamp()
-    });
     return true;
   }
 
@@ -444,15 +417,12 @@ class FirebaseService {
       const gameRef = this.db.collection('games').doc(gameId);
       const playerRef = gameRef.collection('players').doc(userId);
       
-      const updateData = {
-        lastActiveAt: firestore.FieldValue.serverTimestamp()
-      };
+      const updateData = {};
       
       if (round) {
         // Update specific round state
         updateData[`roundStates.${round}`] = {
-          ready: readyStatus,
-          readyAt: readyStatus ? firestore.FieldValue.serverTimestamp() : null
+          ready: readyStatus
         };
       } else {
         // Legacy support
@@ -460,11 +430,6 @@ class FirebaseService {
       }
       
       await playerRef.update(updateData);
-      
-      // Update game timestamp
-      await gameRef.update({
-        updatedAt: firestore.FieldValue.serverTimestamp()
-      });
     } catch (error) {
       console.error('Error updating player ready status:', error);
       throw new Error('Failed to update ready status');
@@ -482,8 +447,7 @@ class FirebaseService {
       const character = gameScriptService.getCharacterByName(gameData.gameScriptId, characterName);
       
       const updateData = {
-        characterName,
-        lastActiveAt: firestore.FieldValue.serverTimestamp()
+        characterName
       };
       
       if (character) {
@@ -494,11 +458,6 @@ class FirebaseService {
       }
       
       await playerRef.update(updateData);
-      
-      // Update game timestamp
-      await gameRef.update({
-        updatedAt: firestore.FieldValue.serverTimestamp()
-      });
     } catch (error) {
       console.error('Error assigning character:', error);
       throw new Error('Failed to assign character');
@@ -533,17 +492,26 @@ class FirebaseService {
         status: 'IN_PROGRESS',
         currentRound: 1, // TEMPORARY: Use round 1 instead of 0 to test Firebase compatibility
         roundState: 'ROUND_ACTIVE',
-        startedAt: firestore.FieldValue.serverTimestamp(),
-        updatedAt: firestore.FieldValue.serverTimestamp(),
         [`roundData.1`]: {
-          startedAt: firestore.FieldValue.serverTimestamp(),
-          completedAt: null,
           readyPlayers: []
         }
       });
       
-      // Track game start analytics
-      await this.trackGameStart(gameId, gameData);
+      // Initialize all players' roundStates[1] for the introduction round
+      const initialPlayersSnapshot = await gameRef.collection('players').get();
+      const initialBatch = this.db.batch();
+      
+      initialPlayersSnapshot.forEach(doc => {
+        const playerRef = gameRef.collection('players').doc(doc.id);
+        initialBatch.update(playerRef, {
+          [`roundStates.1`]: {
+            ready: false,
+            readyAt: null
+          }
+        });
+      });
+      
+      await initialBatch.commit();
       
       return true;
     } catch (error) {
@@ -568,17 +536,13 @@ class FirebaseService {
       const currentRound = gameData.currentRound;
       let nextRound;
       
-      // Special case: advance from introduction (round 0) to round 1
-      if (currentRound === 0) {
+      // Special case: advance from introduction (round 1) to round 2
+      if (currentRound === 1) {
         await gameRef.update({
-          'roundData.0.completedAt': firestore.FieldValue.serverTimestamp(),
-          currentRound: 1,
-          'roundData.1': {
-            startedAt: firestore.FieldValue.serverTimestamp(),
-            completedAt: null,
+          currentRound: 2,
+          'roundData.2': {
             readyPlayers: []
-          },
-          updatedAt: firestore.FieldValue.serverTimestamp()
+          }
         });
         return;
       }
@@ -594,14 +558,10 @@ class FirebaseService {
       
       // Mark current round as completed
       await gameRef.update({
-        [`roundData.${currentRound}.completedAt`]: firestore.FieldValue.serverTimestamp(),
         currentRound: nextRound,
         [`roundData.${nextRound}`]: {
-          startedAt: firestore.FieldValue.serverTimestamp(),
-          completedAt: null,
           readyPlayers: []
-        },
-        updatedAt: firestore.FieldValue.serverTimestamp()
+        }
       });
       
       // Reset all players' ready status for the new round
@@ -619,18 +579,13 @@ class FirebaseService {
       });
       
       await batch.commit();
-      // Track round completion analytics
-      await this.trackRoundCompletion(gameId, currentRound, gameData);
       
-      // After advancing to round 7 (game end), mark game as completed and track analytics
+      // After advancing to round 7 (game end), mark game as completed
       if (nextRound === 7) {
         await gameRef.update({
           status: 'COMPLETED',
-          completedAt: firestore.FieldValue.serverTimestamp(),
-          gameState: 'COMPLETED',
-          updatedAt: firestore.FieldValue.serverTimestamp()
+          gameState: 'COMPLETED'
         });
-        await this.trackGameCompletion(gameId, gameData);
       }
     } catch (error) {
       console.error('Error advancing round:', error);
@@ -644,8 +599,7 @@ class FirebaseService {
       // Real Firebase implementation
       const gameRef = this.db.collection('games').doc(gameId);
       await gameRef.update({
-        introductionShown: true,
-        updatedAt: firestore.FieldValue.serverTimestamp()
+        introductionShown: true
       });
       
       console.log('Introduction marked as shown for game:', gameId);
@@ -688,12 +642,8 @@ class FirebaseService {
           accusedCharacter,
           timestamp: currentTimestamp,
           isCorrect: false
-        }),
-        updatedAt: firestore.FieldValue.serverTimestamp()
+        })
       });
-      // Track accusation analytics
-      const updatedGameDoc = await gameRef.get();
-      await this.trackAccusationAnalytics(gameId, updatedGameDoc.data());
     } catch (error) {
       console.error('Error submitting accusation:', error);
       throw new Error('Failed to submit accusation');
@@ -798,138 +748,7 @@ class FirebaseService {
   // USER PROFILE MANAGEMENT
   // ============================================================================
 
-  // Create or update user profile
-  async createOrUpdateUserProfile(userId, username, additionalData = {}) {
-    try {
-      const userRef = this.db.collection('users').doc(userId);
-      const userDoc = await userRef.get();
 
-      const userProfile = {
-        userId,
-        username,
-        displayName: additionalData.displayName || username,
-        email: additionalData.email || null,
-        avatar: additionalData.avatar || null,
-        preferences: {
-          textSize: additionalData.preferences?.textSize || 'medium',
-          darkMode: additionalData.preferences?.darkMode || false,
-          notifications: additionalData.preferences?.notifications || true,
-          language: additionalData.preferences?.language || 'en'
-        },
-        statistics: {
-          gamesPlayed: additionalData.statistics?.gamesPlayed || 0,
-          gamesHosted: additionalData.statistics?.gamesHosted || 0,
-          gamesWon: additionalData.statistics?.gamesWon || 0,
-          favoriteCharacter: additionalData.statistics?.favoriteCharacter || null,
-          totalPlayTime: additionalData.statistics?.totalPlayTime || 0
-        },
-        lastActiveAt: firestore.FieldValue.serverTimestamp(),
-        isActive: true
-      };
-
-      if (!userDoc.exists) {
-        // Create new user profile
-        userProfile.createdAt = firestore.FieldValue.serverTimestamp();
-        await userRef.set(userProfile);
-        console.log('Created new user profile for:', userId);
-      } else {
-        // Update existing user profile
-        userProfile.updatedAt = firestore.FieldValue.serverTimestamp();
-        await userRef.update(userProfile);
-        console.log('Updated user profile for:', userId);
-      }
-
-      return userProfile;
-    } catch (error) {
-      console.error('Error creating/updating user profile:', error);
-      throw error;
-    }
-  }
-
-  // Get user profile
-  async getUserProfile(userId) {
-    try {
-      const userRef = this.db.collection('users').doc(userId);
-      const userDoc = await userRef.get();
-
-      if (!userDoc.exists) {
-        console.log('User profile not found for:', userId);
-        return null;
-      }
-
-      return userDoc.data();
-    } catch (error) {
-      console.error('Error getting user profile:', error);
-      throw error;
-    }
-  }
-
-  // Update user preferences
-  async updateUserPreferences(userId, preferences) {
-    try {
-      const userRef = this.db.collection('users').doc(userId);
-      await userRef.update({
-        'preferences': preferences,
-        'lastActiveAt': firestore.FieldValue.serverTimestamp(),
-        'updatedAt': firestore.FieldValue.serverTimestamp()
-      });
-
-      console.log('Updated user preferences for:', userId);
-      return true;
-    } catch (error) {
-      console.error('Error updating user preferences:', error);
-      throw error;
-    }
-  }
-
-  // Update user statistics
-  async updateUserStatistics(userId, statistics) {
-    try {
-      const userRef = this.db.collection('users').doc(userId);
-      await userRef.update({
-        'statistics': statistics,
-        'lastActiveAt': firestore.FieldValue.serverTimestamp(),
-        'updatedAt': firestore.FieldValue.serverTimestamp()
-      });
-
-      console.log('Updated user statistics for:', userId);
-      return true;
-    } catch (error) {
-      console.error('Error updating user statistics:', error);
-      throw error;
-    }
-  }
-
-  // Increment user statistics (for game completion, etc.)
-  async incrementUserStatistics(userId, incrementData) {
-    try {
-      const userRef = this.db.collection('users').doc(userId);
-      const userDoc = await userRef.get();
-      const updates = {
-        'lastActiveAt': firestore.FieldValue.serverTimestamp(),
-        'updatedAt': firestore.FieldValue.serverTimestamp()
-      };
-      Object.keys(incrementData).forEach(key => {
-        updates[`statistics.${key}`] = firestore.FieldValue.increment(incrementData[key]);
-      });
-      if (userDoc.exists) {
-        await userRef.update(updates);
-      } else {
-        // Create the user document with default statistics
-        await userRef.set({
-          statistics: incrementData,
-          createdAt: firestore.FieldValue.serverTimestamp(),
-          lastActiveAt: firestore.FieldValue.serverTimestamp(),
-          updatedAt: firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
-      }
-      console.log('Incremented user statistics for:', userId);
-      return true;
-    } catch (error) {
-      console.error('Error incrementing user statistics:', error);
-      throw error;
-    }
-  }
 
   // Delete user profile (GDPR compliance)
   async deleteUserProfile(userId) {
@@ -986,529 +805,23 @@ class FirebaseService {
   }
 
   // ============================================================================
-  // GAME ANALYTICS FUNCTIONS
+  // ANALYTICS FUNCTIONS REMOVED - Not needed for core game functionality
   // ============================================================================
 
-  // Track game creation analytics
-  async trackGameCreation(gameId, hostUserId, scriptId, playerCount = 1) {
-    try {
-      const analyticsRef = this.db.collection('analytics').doc('game_metrics');
-      await analyticsRef.set({
-        totalGamesCreated: firestore.FieldValue.increment(1),
-        gamesByScript: firestore.FieldValue.increment(1),
-        averagePlayerCount: firestore.FieldValue.increment(playerCount),
-        lastUpdated: firestore.FieldValue.serverTimestamp()
-      }, { merge: true });
 
-      // Track individual game creation event
-      await this.db.collection('analytics').doc('events').collection('game_creations').add({
-        gameId,
-        hostUserId,
-        scriptId,
-        playerCount,
-        timestamp: firestore.FieldValue.serverTimestamp(),
-        platform: 'mobile'
-      });
 
-      console.log('Tracked game creation analytics for:', gameId);
-      return true;
-    } catch (error) {
-      console.error('Error tracking game creation:', error);
-      // Don't throw error - analytics failures shouldn't break game functionality
-      return false;
-    }
-  }
 
-  // Track game start analytics
-  async trackGameStart(gameId, gameData) {
-    try {
-      const startTime = Date.now();
-      const playerCount = gameData.players?.length || 0;
-      const scriptId = gameData.gameScriptId;
 
-      // Update game metrics
-      const analyticsRef = this.db.collection('analytics').doc('game_metrics');
-      await analyticsRef.set({
-        totalGamesStarted: firestore.FieldValue.increment(1),
-        averageTimeToStart: firestore.FieldValue.increment(startTime - gameData.createdAt),
-        averagePlayerCountAtStart: firestore.FieldValue.increment(playerCount),
-        lastUpdated: firestore.FieldValue.serverTimestamp()
-      }, { merge: true });
 
-      // Track game start event
-      await this.db.collection('analytics').doc('events').collection('game_starts').add({
-        gameId,
-        scriptId,
-        playerCount,
-        timeToStart: startTime - gameData.createdAt,
-        timestamp: firestore.FieldValue.serverTimestamp()
-      });
 
-      console.log('Tracked game start analytics for:', gameId);
-      return true;
-    } catch (error) {
-      console.error('Error tracking game start:', error);
-      return false;
-    }
-  }
 
-  // Track round completion analytics
-  async trackRoundCompletion(gameId, roundNumber, gameData) {
-    try {
-      const roundData = gameData.roundData?.[roundNumber];
-      if (!roundData) return false;
 
-      const roundDuration = roundData.completedAt - roundData.startedAt;
-      const readyPlayers = gameData.players?.filter(p => p.roundStates?.[roundNumber]?.ready).length || 0;
-      const totalPlayers = gameData.players?.length || 0;
 
-      // Update round metrics
-      const analyticsRef = this.db.collection('analytics').doc('round_metrics');
-      await analyticsRef.set({
-        [`round_${roundNumber}_completions`]: firestore.FieldValue.increment(1),
-        [`round_${roundNumber}_average_duration`]: firestore.FieldValue.increment(roundDuration),
-        [`round_${roundNumber}_average_ready_rate`]: firestore.FieldValue.increment(readyPlayers / totalPlayers),
-        lastUpdated: firestore.FieldValue.serverTimestamp()
-      }, { merge: true });
 
-      // Track round completion event
-      await this.db.collection('analytics').doc('events').collection('round_completions').add({
-        gameId,
-        roundNumber,
-        duration: roundDuration,
-        readyPlayers,
-        totalPlayers,
-        readyRate: readyPlayers / totalPlayers,
-        timestamp: firestore.FieldValue.serverTimestamp()
-      });
 
-      console.log('Tracked round completion analytics for:', { gameId, roundNumber });
-      return true;
-    } catch (error) {
-      console.error('Error tracking round completion:', error);
-      return false;
-    }
-  }
 
-  // Track accusation analytics
-  async trackAccusationAnalytics(gameId, gameData) {
-    try {
-      const accusations = gameData.accusations?.accusations || [];
-      const murdererCharacter = gameScriptService.getMurdererCharacter(gameData.gameScriptId)?.characterName;
-      
-      if (!murdererCharacter) return false;
 
-      // Calculate accusation statistics
-      const totalAccusations = accusations.length;
-      const correctAccusations = accusations.filter(acc => acc.accusedCharacter === murdererCharacter).length;
-      const accuracyRate = totalAccusations > 0 ? correctAccusations / totalAccusations : 0;
 
-      // Track character accusation distribution
-      const characterAccusations = {};
-      accusations.forEach(acc => {
-        characterAccusations[acc.accusedCharacter] = (characterAccusations[acc.accusedCharacter] || 0) + 1;
-      });
-
-      // Update accusation metrics
-      const analyticsRef = this.db.collection('analytics').doc('accusation_metrics');
-      await analyticsRef.set({
-        totalAccusations: firestore.FieldValue.increment(totalAccusations),
-        correctAccusations: firestore.FieldValue.increment(correctAccusations),
-        averageAccuracyRate: firestore.FieldValue.increment(accuracyRate),
-        lastUpdated: firestore.FieldValue.serverTimestamp()
-      }, { merge: true });
-
-      // Track accusation event
-      await this.db.collection('analytics').doc('events').collection('accusations').add({
-        gameId,
-        scriptId: gameData.gameScriptId,
-        totalAccusations,
-        correctAccusations,
-        accuracyRate,
-        characterAccusations,
-        murdererCharacter,
-        timestamp: firestore.FieldValue.serverTimestamp()
-      });
-
-      console.log('Tracked accusation analytics for:', gameId);
-      return true;
-    } catch (error) {
-      console.error('Error tracking accusation analytics:', error);
-      return false;
-    }
-  }
-
-  // Track game completion analytics
-  async trackGameCompletion(gameId, gameData) {
-    try {
-      const gameDuration = Date.now() - gameData.createdAt;
-      const playerCount = gameData.players?.length || 0;
-      const scriptId = gameData.gameScriptId;
-
-      // Calculate game success metrics
-      const accusations = gameData.accusations?.accusations || [];
-      const murdererCharacter = gameScriptService.getMurdererCharacter(scriptId)?.characterName;
-      const correctAccusations = accusations.filter(acc => acc.accusedCharacter === murdererCharacter).length;
-      const accuracyRate = accusations.length > 0 ? correctAccusations / accusations.length : 0;
-
-      // Update game completion metrics
-      const analyticsRef = this.db.collection('analytics').doc('game_metrics');
-      await analyticsRef.set({
-        totalGamesCompleted: firestore.FieldValue.increment(1),
-        averageGameDuration: firestore.FieldValue.increment(gameDuration),
-        averageAccuracyRate: firestore.FieldValue.increment(accuracyRate),
-        completionRate: firestore.FieldValue.increment(1), // Will be calculated as completed/started
-        lastUpdated: firestore.FieldValue.serverTimestamp()
-      }, { merge: true });
-
-      // Track game completion event
-      await this.db.collection('analytics').doc('events').collection('game_completions').add({
-        gameId,
-        scriptId,
-        playerCount,
-        gameDuration,
-        accuracyRate,
-        correctAccusations,
-        totalAccusations: accusations.length,
-        timestamp: firestore.FieldValue.serverTimestamp()
-      });
-
-      // Update user statistics for all players
-      for (const player of gameData.players || []) {
-        await this.incrementUserStatistics(player.userId, {
-          gamesPlayed: 1,
-          totalPlayTime: gameDuration
-        });
-      }
-
-      // Update host statistics
-      if (gameData.hostUserId) {
-        await this.incrementUserStatistics(gameData.hostUserId, {
-          gamesHosted: 1
-        });
-      }
-
-      console.log('Tracked game completion analytics for:', gameId);
-      return true;
-    } catch (error) {
-      console.error('Error tracking game completion:', error);
-      return false;
-    }
-  }
-
-  // Track player behavior analytics
-  async trackPlayerBehavior(gameId, userId, action, additionalData = {}) {
-    try {
-      // Track player action event
-      await this.db.collection('analytics').doc('events').collection('player_actions').add({
-        gameId,
-        userId,
-        action,
-        ...additionalData,
-        timestamp: firestore.FieldValue.serverTimestamp()
-      });
-
-      // Update player behavior metrics
-      const analyticsRef = this.db.collection('analytics').doc('player_metrics');
-      await analyticsRef.set({
-        [`${action}_count`]: firestore.FieldValue.increment(1),
-        lastUpdated: firestore.FieldValue.serverTimestamp()
-      }, { merge: true });
-
-      console.log('Tracked player behavior:', { gameId, userId, action });
-      return true;
-    } catch (error) {
-      console.error('Error tracking player behavior:', error);
-      return false;
-    }
-  }
-
-  // Track script popularity analytics
-  async trackScriptUsage(scriptId, action = 'selected') {
-    try {
-      const analyticsRef = this.db.collection('analytics').doc('script_metrics');
-      await analyticsRef.set({
-        [`${scriptId}_${action}_count`]: firestore.FieldValue.increment(1),
-        lastUpdated: firestore.FieldValue.serverTimestamp()
-      }, { merge: true });
-
-      console.log('Tracked script usage:', { scriptId, action });
-      return true;
-    } catch (error) {
-      console.error('Error tracking script usage:', error);
-      return false;
-    }
-  }
-
-  // Track technical performance analytics
-  async trackTechnicalMetrics(metric, value, additionalData = {}) {
-    try {
-      await this.db.collection('analytics').doc('events').collection('technical_metrics').add({
-        metric,
-        value,
-        ...additionalData,
-        timestamp: firestore.FieldValue.serverTimestamp()
-      });
-
-      console.log('Tracked technical metric:', { metric, value });
-      return true;
-    } catch (error) {
-      console.error('Error tracking technical metrics:', error);
-      return false;
-    }
-  }
-
-  // Get analytics summary for dashboard
-  async getAnalyticsSummary() {
-    try {
-      // Get game metrics
-      const gameMetricsDoc = await this.db.collection('analytics').doc('game_metrics').get();
-      const gameMetrics = gameMetricsDoc.exists ? gameMetricsDoc.data() : {};
-
-      // Get player metrics
-      const playerMetricsDoc = await this.db.collection('analytics').doc('player_metrics').get();
-      const playerMetrics = playerMetricsDoc.exists ? playerMetricsDoc.data() : {};
-
-      // Get script metrics
-      const scriptMetricsDoc = await this.db.collection('analytics').doc('script_metrics').get();
-      const scriptMetrics = scriptMetricsDoc.exists ? scriptMetricsDoc.data() : {};
-
-      // Get round metrics
-      const roundMetricsDoc = await this.db.collection('analytics').doc('round_metrics').get();
-      const roundMetrics = roundMetricsDoc.exists ? roundMetricsDoc.data() : {};
-
-      // Get accusation metrics
-      const accusationMetricsDoc = await this.db.collection('analytics').doc('accusation_metrics').get();
-      const accusationMetrics = accusationMetricsDoc.exists ? accusationMetricsDoc.data() : {};
-
-      return {
-        gameMetrics,
-        playerMetrics,
-        scriptMetrics,
-        roundMetrics,
-        accusationMetrics
-      };
-    } catch (error) {
-      console.error('Error getting analytics summary:', error);
-      throw error;
-    }
-  }
-
-  // Get detailed analytics for specific time period
-  async getDetailedAnalytics(startDate, endDate, metrics = ['all']) {
-    try {
-      const events = [];
-      
-      if (metrics.includes('all') || metrics.includes('game_creations')) {
-        const gameCreationsSnapshot = await this.db.collection('analytics').doc('events')
-          .collection('game_creations')
-          .where('timestamp', '>=', startDate)
-          .where('timestamp', '<=', endDate)
-          .get();
-        
-        gameCreationsSnapshot.forEach(doc => {
-          events.push({ type: 'game_creation', ...doc.data() });
-        });
-      }
-
-      if (metrics.includes('all') || metrics.includes('game_completions')) {
-        const gameCompletionsSnapshot = await this.db.collection('analytics').doc('events')
-          .collection('game_completions')
-          .where('timestamp', '>=', startDate)
-          .where('timestamp', '<=', endDate)
-          .get();
-        
-        gameCompletionsSnapshot.forEach(doc => {
-          events.push({ type: 'game_completion', ...doc.data() });
-        });
-      }
-
-      if (metrics.includes('all') || metrics.includes('player_actions')) {
-        const playerActionsSnapshot = await this.db.collection('analytics').doc('events')
-          .collection('player_actions')
-          .where('timestamp', '>=', startDate)
-          .where('timestamp', '<=', endDate)
-          .get();
-        
-        playerActionsSnapshot.forEach(doc => {
-          events.push({ type: 'player_action', ...doc.data() });
-        });
-      }
-
-      return events;
-    } catch (error) {
-      console.error('Error getting detailed analytics:', error);
-      throw error;
-    }
-  }
-
-  // Export analytics data (for backup or external analysis)
-  async exportAnalyticsData(startDate, endDate) {
-    try {
-      const summary = await this.getAnalyticsSummary();
-      const events = await this.getDetailedAnalytics(startDate, endDate, ['all']);
-
-      return {
-        summary,
-        events,
-        exportDate: new Date().toISOString(),
-        dateRange: { startDate, endDate }
-      };
-    } catch (error) {
-      console.error('Error exporting analytics data:', error);
-      throw error;
-    }
-  }
-
-  // ===== PHASE 1: MY GAMES FEATURE - USER PARTICIPATION TRACKING =====
-
-  // Track user participation in a game
-  async trackUserParticipation(gameId, userId, username, role = 'player') {
-    try {
-      const participationData = {
-        gameId,
-        userId,
-        username,
-        role, // 'host' or 'player'
-        joinedAt: firestore.FieldValue.serverTimestamp(),
-        lastActiveAt: firestore.FieldValue.serverTimestamp(),
-        status: 'active' // 'active', 'left', 'removed'
-      };
-
-      // Store in user_participation collection
-      await this.db.collection('user_participation').add(participationData);
-
-      // Also update user's game list
-      const userGamesRef = this.db.collection('users').doc(userId).collection('games').doc(gameId);
-      await userGamesRef.set({
-        gameId,
-        role,
-        joinedAt: firestore.FieldValue.serverTimestamp(),
-        lastActiveAt: firestore.FieldValue.serverTimestamp(),
-        status: 'active'
-      }, { merge: true });
-
-      console.log('Tracked user participation:', { gameId, userId, username, role });
-      return true;
-    } catch (error) {
-      console.error('Error tracking user participation:', error);
-      return false;
-    }
-  }
-
-  // Get all games a user has participated in
-  async getUserGames(userId, includeDeleted = false) {
-    if (!this.db) {
-      throw new Error('Firestore database is not initialized. Make sure Firebase is initialized before calling getUserGames.');
-    }
-    try {
-      // Get user's game list
-      const userGamesSnapshot = await this.db.collection('users').doc(userId)
-        .collection('games')
-        .get();
-
-      const userGames = [];
-      
-      for (const doc of userGamesSnapshot.docs) {
-        const userGameData = doc.data();
-        
-        // Get the actual game data including players
-        const gameData = await this.getGameData(userGameData.gameId);
-        
-        if (gameData) {
-          // Skip deleted games unless specifically requested
-          if (!includeDeleted && gameData.deletedAt) {
-            continue;
-          }
-          
-          userGames.push({
-            ...userGameData,
-            gameData: {
-              ...gameData,
-              // Ensure we have the gameId
-              gameId: userGameData.gameId
-            }
-          });
-        }
-      }
-
-      // Sort by last active (most recent first)
-      userGames.sort((a, b) => b.lastActiveAt?.toDate?.() - a.lastActiveAt?.toDate?.());
-
-      return userGames;
-    } catch (error) {
-      console.error('Error getting user games:', error);
-      throw error;
-    }
-  }
-
-  // Update user's last active time in a game
-  async updateUserLastActive(gameId, userId) {
-    try {
-      const now = firestore.FieldValue.serverTimestamp();
-
-      // Update in user_participation collection
-      const participationQuery = await this.db.collection('user_participation')
-        .where('gameId', '==', gameId)
-        .where('userId', '==', userId)
-        .limit(1)
-        .get();
-
-      if (!participationQuery.empty) {
-        const participationDoc = participationQuery.docs[0];
-        await participationDoc.ref.update({
-          lastActiveAt: now
-        });
-      }
-
-      // Update in user's game list
-      await this.db.collection('users').doc(userId)
-        .collection('games').doc(gameId)
-        .update({
-          lastActiveAt: now
-        });
-
-      return true;
-    } catch (error) {
-      console.error('Error updating user last active:', error);
-      return false;
-    }
-  }
-
-  // Mark user as having left a game
-  async markUserLeftGame(gameId, userId) {
-    try {
-      const now = firestore.FieldValue.serverTimestamp();
-
-      // Update in user_participation collection
-      const participationQuery = await this.db.collection('user_participation')
-        .where('gameId', '==', gameId)
-        .where('userId', '==', userId)
-        .limit(1)
-        .get();
-
-      if (!participationQuery.empty) {
-        const participationDoc = participationQuery.docs[0];
-        await participationDoc.ref.update({
-          status: 'left',
-          leftAt: now
-        });
-      }
-
-      // Update in user's game list
-      await this.db.collection('users').doc(userId)
-        .collection('games').doc(gameId)
-        .update({
-          status: 'left',
-          leftAt: now
-        });
-
-      return true;
-    } catch (error) {
-      console.error('Error marking user left game:', error);
-      return false;
-    }
-  }
 
   // Soft delete a game (mark as deleted but keep data)
   async softDeleteGame(gameId, userId) {
@@ -1527,13 +840,9 @@ class FirebaseService {
         throw new Error('Only the host can delete this game');
       }
 
-      const now = firestore.FieldValue.serverTimestamp();
-
       // Mark game as deleted
       await gameRef.update({
-        deletedAt: now,
-        gameState: 'DELETED',
-        updatedAt: now
+        gameState: 'DELETED'
       });
 
       // Mark all participants' user game records as deleted
@@ -1545,8 +854,7 @@ class FirebaseService {
         const userGameDoc = await userGameRef.get();
         if (userGameDoc.exists) {
           await userGameRef.update({
-            status: 'deleted',
-            deletedAt: now
+            status: 'deleted'
           });
         }
       }
