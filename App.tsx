@@ -558,26 +558,32 @@ export default function App() {
           )}
           
           {view === VIEWS.GAME && (
-            <View style={styles.container}>
-              <Text style={dynamicStyles.titleText}>
-                Game Round {gameData?.currentRound || 'Unknown'}
-              </Text>
-              <Text style={dynamicStyles.bodyText}>
-                {gameData?.currentRound === 2 ? 
-                  'First gameplay round - introduce yourself to the group' :
-                  `Round ${gameData?.currentRound || 'Unknown'} is in progress.`
+            <GameView
+              gameId={gameId}
+              gameData={gameData}
+              userId={username || 'anonymous'}
+              dynamicStyles={dynamicStyles}
+              textSize={textSize}
+              onAdvanceToNextRound={async () => {
+                try {
+                  console.log('🔧 Advancing to next round from Game view...');
+                  await firebaseService.advanceRound(gameId);
+                  console.log('🔧 Successfully advanced to next round');
+                } catch (error) {
+                  console.error('🔧 Error advancing round:', error);
+                  alert('Failed to advance round: ' + (error.message || 'Unknown error'));
                 }
-              </Text>
-              <Text style={dynamicStyles.bodyText}>
-                This is a placeholder for the actual game content.
-              </Text>
-              <TouchableOpacity
-                style={styles.button}
-                onPress={() => setView(VIEWS.HOME)}
-              >
-                <Text style={dynamicStyles.buttonText}>Back to Home</Text>
-              </TouchableOpacity>
-            </View>
+              }}
+              onExitGame={() => {
+                console.log('🔧 Exiting game, returning to home');
+                setView(VIEWS.HOME);
+              }}
+              onShowPlayerScript={(player) => {
+                console.log('🔧 Showing script for player:', player.username);
+                // TODO: Implement player script modal
+              }}
+              scrollViewRef={gameScrollViewRef}
+            />
           )}
           
           {/* Add other views as we migrate them */}

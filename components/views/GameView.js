@@ -142,6 +142,19 @@ export default function GameView({
   const characterScript = getCharacterScript(currentPlayer?.characterName, currentRound);
   const isReady = currentPlayer?.roundStates?.[currentRound]?.ready || false;
   const roundInstructions = gameScriptService.getRoundInstructions(gameData?.gameScriptId, currentRound);
+  
+  // Transform backend round instructions to player-friendly labels
+  const getPlayerFriendlyRoundInstructions = () => {
+    switch (currentRound) {
+      case 2: return 'Introduce yourself to the group and share your character\'s background';
+      case 3: return 'Tell your story and react to others\' stories';
+      case 4: return 'Make your observation about the events';
+      case 5: return 'Make your observation about the events';
+      case 5.5: return 'Deliberate with your party and make accusations';
+      case 6: return 'Read your final statements in order';
+      default: return roundInstructions;
+    }
+  };
 
   const handleSetPlayerReady = async (readyStatus) => {
     if (!gameId || !userId) return;
@@ -242,8 +255,8 @@ export default function GameView({
                 }
               ]}
             >
-              <Text style={styles.header}>Accusations</Text>
-              <Text style={[dynamicStyles.label, {paddingHorizontal: 16}]}> {roundInstructions} </Text>
+              <Text style={styles.header}>Round 5 - Make Accusations</Text>
+              <Text style={[dynamicStyles.label, {paddingHorizontal: 16}]}> {getPlayerFriendlyRoundInstructions()} </Text>
               
               {accusationSubmitted ? (
                 <View style={[styles.gameInfo, {alignItems: 'center'}]}>
@@ -354,8 +367,8 @@ export default function GameView({
                 { paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 20, backgroundColor: 'transparent' }
               ]}
             >
-              <Text style={styles.header}>Final Statements</Text>
-              <Text style={[dynamicStyles.label, {paddingHorizontal: 16}]}>Read your final statements</Text>
+              <Text style={styles.header}>Round 6 - Final Statements</Text>
+              <Text style={[dynamicStyles.label, {paddingHorizontal: 16}]}>Read your final statements in order</Text>
               <Text style={[dynamicStyles.label, {paddingHorizontal: 16, marginBottom: 8}]}>(your statement order: {characterObj?.finalStatementOrder || 'No order specified'})</Text>
               <View style={styles.gameInfo}>
                 <Text style={dynamicStyles.label}>Your Final Statement:</Text>
@@ -474,9 +487,17 @@ export default function GameView({
               ]}
             >
             <Text style={currentRound === 7 ? {color: '#fff', fontSize: 40, fontWeight: 'bold', textAlign: 'center', marginVertical: 16} : styles.header}>
-              {currentRound === 7 ? 'The END' : `Round ${currentRound}`}
+              {currentRound === 7 ? 'The END' : 
+               currentRound === 2 ? 'Round 1 - Introduce Yourself' :
+               currentRound === 3 ? 'Round 2 - Tell Your Story' :
+               currentRound === 4 ? 'Round 3 - Make Your Observation' :
+               currentRound === 5 ? 'Round 4 - Make Your Observation' :
+               currentRound === 5.5 ? 'Round 5 - Make Accusations' :
+               currentRound === 6 ? 'Round 6 - Final Statements' :
+               `Round ${currentRound}`
+              }
             </Text>
-            {currentRound !== 7 && <Text style={dynamicStyles.label}>{roundInstructions}</Text>}
+            {currentRound !== 7 && <Text style={dynamicStyles.label}>{getPlayerFriendlyRoundInstructions()}</Text>}
             
             {/* Murderer and Vote Totals for Round 7 */}
             {currentRound === 7 && (
