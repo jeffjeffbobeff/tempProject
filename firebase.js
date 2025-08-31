@@ -54,7 +54,6 @@ class FirebaseService {
         
         // Try to get the Firestore instance directly
         const firestoreInstance = firestore();
-        console.log('🔧 firestore() returned:', typeof firestoreInstance, firestoreInstance);
         
         // Test if we can actually use it
         if (firestoreInstance && typeof firestoreInstance.collection === 'function') {
@@ -66,7 +65,6 @@ class FirebaseService {
           
           return true; // Return true on successful initialization
         } else {
-          console.log('🔧 firestoreInstance.collection is not a function:', typeof firestoreInstance.collection);
           throw new Error('Firestore instance is not properly initialized');
         }
       } catch (error) {
@@ -142,38 +140,28 @@ class FirebaseService {
 
   // Generate a unique game ID with collision detection
   async generateUniqueGameId(maxAttempts = 10) {
-    console.log('🔧 generateUniqueGameId called, this.db:', this.db);
-    console.log('🔧 Firebase ready check:', this.isReady());
-    
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       const gameId = this.generateGameId();
-      console.log(`🔧 Attempt ${attempt}: Generated game ID: ${gameId}`);
       
       try {
         // Check if this game ID already exists
-        console.log(`🔧 Checking if ${gameId} exists in database...`);
         const gameDoc = await this.db.collection('games').doc(gameId).get();
-        console.log(`🔧 Game ${gameId} exists:`, gameDoc._exists);
-        console.log(`🔧 gameDoc type:`, typeof gameDoc);
-        console.log(`🔧 gameDoc keys:`, Object.keys(gameDoc));
-        console.log(`🔧 gameDoc._exists type:`, typeof gameDoc._exists);
         
         if (!gameDoc._exists) {
           // Game ID is unique, return it
-          console.log(`🔧 Game ID ${gameId} is unique, returning it`);
+          console.log(`🔧 Generated unique game ID: ${gameId}`);
           return gameId;
         }
         
         // If we're on the last attempt, throw an error
         if (attempt === maxAttempts) {
-          console.log(`🔧 Max attempts reached, throwing error`);
           throw new Error('Unable to generate unique game ID after maximum attempts');
         }
         
         // Continue to next attempt
         console.log(`🔧 Game ID ${gameId} exists, trying again...`);
       } catch (error) {
-        console.error(`🔧 Error on attempt ${attempt}:`, error);
+        console.error(`🔧 Error generating game ID on attempt ${attempt}:`, error);
         
         // If it's the last attempt, re-throw the error
         if (attempt === maxAttempts) {
@@ -190,9 +178,7 @@ class FirebaseService {
   // Create a new game session with the new data structure
   async createGame(hostUserId, hostUsername, scriptId = 'opera_murder_mystery_v1') {
     try {
-      console.log('🔧 createGame called with:', { hostUserId, hostUsername, scriptId });
-      console.log('🔧 this.db:', this.db);
-      console.log('🔧 Firebase ready check:', this.isReady());
+      console.log('🔧 Creating game for host:', hostUsername, 'with script:', scriptId);
       
       // Ensure Firebase is ready
       if (!this.db) {
@@ -205,13 +191,9 @@ class FirebaseService {
         throw new Error('Firebase connection test failed. Please check your internet connection and try again.');
       }
       
-      console.log('🔧 Firebase is ready, generating unique game ID...');
       const gameId = await this.generateUniqueGameId();
-      console.log('🔧 Generated game ID:', gameId);
       
       const gameScript = gameScriptService.getGameScript(scriptId);
-      console.log('🔧 Game script found:', !!gameScript);
-      
       if (!gameScript) {
         throw new Error('Invalid game script ID');
       }
@@ -264,6 +246,7 @@ class FirebaseService {
       // Create initial host player
       await this.addPlayerToGame(gameId, hostUserId, hostUsername, true);
       
+      console.log('🔧 Game created successfully with ID:', gameId);
       return gameId;
     } catch (error) {
       console.error('Error creating game:', error);

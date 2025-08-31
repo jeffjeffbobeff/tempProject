@@ -38,6 +38,23 @@ import MyGamesView from './components/views/MyGamesView';
 import OnboardingView from './components/views/OnboardingView';
 
 // ============================================================================
+// DEVELOPMENT CONSOLE FILTERING
+// ============================================================================
+
+// Filter out Firebase deprecation warnings during development
+if (__DEV__) {
+  const originalConsoleWarn = console.warn;
+  console.warn = (...args) => {
+    // Filter out Firebase deprecation warnings
+    if (args[0] && typeof args[0] === 'string' && args[0].includes('deprecated')) {
+      return; // Don't show deprecation warnings
+    }
+    // Show all other warnings
+    originalConsoleWarn(...args);
+  };
+}
+
+// ============================================================================
 // CONSTANTS
 // ============================================================================
 
@@ -121,7 +138,6 @@ export default function App() {
     try {
       // Load available game scripts
       const scripts = gameScriptService.getAvailableScripts();
-      console.log('🔧 Available game scripts:', scripts);
       console.log('🔧 Script IDs:', scripts.map(s => s.scriptId));
       setAvailableGameScripts(scripts);
       
@@ -351,14 +367,7 @@ export default function App() {
                   
                   // Verify the player was actually added
                   const gameDataAfterJoin = await firebaseService.getGameData(gameId);
-                  console.log('🔧 Game data after join:', gameDataAfterJoin);
-                  console.log('🔧 Players after join:', gameDataAfterJoin?.players?.map(p => ({
-                    userId: p.userId,
-                    username: p.username,
-                    characterName: p.characterName,
-                    isHost: p.isHost,
-                    isReady: p.roundStates?.[1]?.ready || false
-                  })));
+                  console.log('🔧 Player joined successfully. Game now has', gameDataAfterJoin?.players?.length || 0, 'players');
                   
                   // Then select the character
                   console.log('🔧 Now selecting character...');
@@ -438,24 +447,14 @@ export default function App() {
                 
                 // Verify the player was actually added
                 const gameDataAfterJoin = await firebaseService.getGameData(gameId);
-                console.log('🔧 Game data after join:', gameDataAfterJoin);
-                console.log('🔧 Players after join:', gameDataAfterJoin?.players?.map(p => ({
-                  userId: p.userId,
-                  username: p.username,
-                  characterName: p.characterName,
-                  isHost: p.isHost,
-                  isReady: p.roundStates?.[1]?.ready || false
-                })));
+                console.log('🔧 Virtual player added successfully. Game now has', gameDataAfterJoin?.players?.length || 0, 'players');
                 
                 // Check if the virtual player document actually exists
                 if (firebaseService.db) {
                   try {
                     const playerDoc = await firebaseService.db.collection('games').doc(gameId).collection('players').doc(userIdVirtual).get();
-                    console.log('🔧 Virtual player document exists:', playerDoc._exists);
-                    if (playerDoc._exists) {
-                      console.log('🔧 Virtual player document data:', playerDoc._data);
-                    } else {
-                      console.log('🔧 Virtual player document does NOT exist - addPlayerToGame failed!');
+                    if (!playerDoc._exists) {
+                      console.log('🔧 Virtual player document missing, creating manually...');
                       // Try to manually create the player document to see what error we get
                       try {
                         const playerData = {
@@ -473,9 +472,9 @@ export default function App() {
                           characterData: { isMurderer: false, secretInformation: null }
                         };
                         await firebaseService.db.collection('games').doc(gameId).collection('players').doc(userIdVirtual).set(playerData);
-                        console.log('🔧 Manually created virtual player document successfully');
+                        console.log('🔧 Virtual player document created successfully');
                       } catch (manualError) {
-                        console.error('🔧 Error manually creating player document:', manualError);
+                        console.error('🔧 Error creating virtual player document:', manualError);
                       }
                     }
                   } catch (error) {
@@ -483,9 +482,8 @@ export default function App() {
                   }
                 }
                 
-                console.log('🔧 Step 2: Assigning character to virtual player...');
                 await firebaseService.selectCharacter(gameId, userIdVirtual, charName);
-                console.log('🔧 Virtual player character assigned successfully');
+                console.log('🔧 Virtual player', charName, 'added and character assigned successfully');
               } catch (error) {
                 console.error('Error adding virtual player:', error);
                 alert('Failed to add virtual player: ' + (error.message || 'Unknown error'));

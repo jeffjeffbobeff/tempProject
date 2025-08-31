@@ -184,7 +184,14 @@ export default function IntroductionView({
             </View>
 
             {/* Host Controls - Only for Host */}
-            {console.log('🔧 Host controls evaluation:', { isHost: isHost(), currentPlayer, userId })}
+            {console.log('🔧 Host controls evaluation:', { 
+              isHost: isHost(), 
+              currentPlayerId: currentPlayer?.userId,
+              currentPlayerUsername: currentPlayer?.username,
+              currentPlayerCharacter: currentPlayer?.characterName,
+              currentPlayerIsHost: currentPlayer?.isHost,
+              userId 
+            })}
             {isHost() && (
               <View style={styles.gameInfo}>
                 <TouchableOpacity
