@@ -541,16 +541,16 @@ export default function App() {
               textSize={textSize}
               onAdvanceToNextRound={async () => {
                 try {
-                  console.log('🔧 Advancing to next round...');
+                  console.log('🔧 Completing Introduction (Round 1) and advancing to first gameplay round...');
                   await firebaseService.advanceRound(gameId);
-                  console.log('🔧 Successfully advanced to next round');
+                  console.log('🔧 Successfully advanced to first gameplay round');
                 } catch (error) {
                   console.error('🔧 Error advancing round:', error);
                   alert('Failed to advance round: ' + (error.message || 'Unknown error'));
                 }
               }}
               onNavigateToNextView={() => {
-                console.log('🔧 Navigating from Introduction to Game view');
+                console.log('🔧 Navigating from Introduction to first gameplay round');
                 setView(VIEWS.GAME);
               }}
               scrollViewRef={introductionScrollViewRef}
@@ -563,7 +563,13 @@ export default function App() {
                 Game Round {gameData?.currentRound || 'Unknown'}
               </Text>
               <Text style={dynamicStyles.bodyText}>
-                This is a placeholder for the game view. Round {gameData?.currentRound || 'Unknown'} is in progress.
+                {gameData?.currentRound === 2 ? 
+                  'First gameplay round - introduce yourself to the group' :
+                  `Round ${gameData?.currentRound || 'Unknown'} is in progress.`
+                }
+              </Text>
+              <Text style={dynamicStyles.bodyText}>
+                This is a placeholder for the actual game content.
               </Text>
               <TouchableOpacity
                 style={styles.button}

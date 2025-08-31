@@ -28,10 +28,10 @@ export default function IntroductionView({
   const [showPlayerStatus, setShowPlayerStatus] = useState(false);
   const hasNavigated = useRef(false);
 
-  // Auto-navigate when round changes (e.g., from introduction round 1 to round 2)
+  // Auto-navigate when round changes (e.g., from introduction round 1 to first gameplay round 2)
   useEffect(() => {
     if (gameData?.currentRound && gameData.currentRound > 1 && !hasNavigated.current) {
-      console.log('🔧 Round advanced from introduction (1) to round', gameData.currentRound, '- auto-navigating to next view');
+      console.log('🔧 Round advanced from Introduction (Round 1) to first gameplay round', gameData.currentRound, '- auto-navigating to next view');
       hasNavigated.current = true; // Prevent multiple navigation attempts
       // Navigate to the next view since the round has already advanced
       if (onNavigateToNextView) {
@@ -74,12 +74,11 @@ export default function IntroductionView({
   const allPlayersReady = gameData?.players?.every(p => p.roundStates?.[1]?.ready || false);
 
   // Enhanced debug logging
-  console.log('🔧 INTRODUCTION screen debug:', {
+  console.log('🔧 INTRODUCTION screen debug (Round 1 - Setup):', {
     currentPlayer: currentPlayer?.userId,
-    currentPlayerRoundStates: currentPlayer?.roundStates,
     isReady,
     allPlayersReady,
-    gameDataCurrentRound: gameData?.currentRound,
+    currentRound: gameData?.currentRound,
     playersCount: gameData?.players?.length,
     playersReadyCount: gameData?.players?.filter(p => p.roundStates?.[1]?.ready).length,
     isHost: isHost(),
