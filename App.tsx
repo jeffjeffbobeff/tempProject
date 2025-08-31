@@ -250,6 +250,27 @@ export default function App() {
           allPlayersReady: data.players?.every((p: any) => p.roundStates?.[1]?.ready) || false
         });
         setGameData(data);
+        
+        // Auto-navigate based on game status changes (for non-host players)
+        // Only auto-navigate if we're not already in the correct view
+        if (data?.status === 'IN_PROGRESS') {
+          // If game is in progress, navigate to appropriate view based on current round
+          if (data?.currentRound === 1 && view !== VIEWS.INTRODUCTION) {
+            console.log('🔧 Auto-navigating to INTRODUCTION (Round 1)');
+            setView(VIEWS.INTRODUCTION);
+          } else if (data?.currentRound > 1 && view !== VIEWS.GAME) {
+            console.log('🔧 Auto-navigating to GAME (Round', data.currentRound, ')');
+            setView(VIEWS.GAME);
+          }
+        } else if (data?.status === 'LOBBY' && view !== VIEWS.LOBBY) {
+          // If game is back in lobby, navigate to lobby
+          console.log('🔧 Auto-navigating to LOBBY');
+          setView(VIEWS.LOBBY);
+        } else if ((data?.status === 'COMPLETED' || data?.currentRound === 7) && view !== VIEWS.GAME) {
+          // If game is completed, navigate to game view (which shows end screen for round 7)
+          console.log('🔧 Auto-navigating to GAME (completed)');
+          setView(VIEWS.GAME);
+        }
       });
       setGameSubscription(() => subscription);
 
@@ -298,6 +319,27 @@ export default function App() {
         // Set up real-time subscription
         const subscription = firebaseService.subscribeToGame(game.gameId, (data: any) => {
           setGameData(data);
+          
+          // Auto-navigate based on game status changes (for non-host players)
+          // Only auto-navigate if we're not already in the correct view
+          if (data?.status === 'IN_PROGRESS') {
+            // If game is in progress, navigate to appropriate view based on current round
+            if (data?.currentRound === 1 && view !== VIEWS.INTRODUCTION) {
+              console.log('🔧 MyGames auto-navigating to INTRODUCTION (Round 1)');
+              setView(VIEWS.INTRODUCTION);
+            } else if (data?.currentRound > 1 && view !== VIEWS.GAME) {
+              console.log('🔧 MyGames auto-navigating to GAME (Round', data.currentRound, ')');
+              setView(VIEWS.GAME);
+            }
+          } else if (data?.status === 'LOBBY' && view !== VIEWS.LOBBY) {
+            // If game is back in lobby, navigate to lobby
+            console.log('🔧 MyGames auto-navigating to LOBBY');
+            setView(VIEWS.LOBBY);
+          } else if ((data?.status === 'COMPLETED' || data?.currentRound === 7) && view !== VIEWS.GAME) {
+            // If game is completed, navigate to game view (which shows end screen for round 7)
+            console.log('🔧 MyGames auto-navigating to GAME (completed)');
+            setView(VIEWS.GAME);
+          }
         });
         setGameSubscription(() => subscription);
         
@@ -495,6 +537,27 @@ export default function App() {
                       allPlayersReady: data.players?.every((p: any) => p.roundStates?.[1]?.ready) || false
                     });
                     setGameData(data);
+                    
+                    // Auto-navigate based on game status changes (for non-host players)
+                    // Only auto-navigate if we're not already in the correct view
+                    if (data?.status === 'IN_PROGRESS') {
+                      // If game is in progress, navigate to appropriate view based on current round
+                      if (data?.currentRound === 1 && view !== VIEWS.INTRODUCTION) {
+                        console.log('🔧 Game creation auto-navigating to INTRODUCTION (Round 1)');
+                        setView(VIEWS.INTRODUCTION);
+                      } else if (data?.currentRound > 1 && view !== VIEWS.GAME) {
+                        console.log('🔧 Game creation auto-navigating to GAME (Round', data.currentRound, ')');
+                        setView(VIEWS.GAME);
+                      }
+                    } else if (data?.status === 'LOBBY' && view !== VIEWS.LOBBY) {
+                      // If game is back in lobby, navigate to lobby
+                      console.log('🔧 Game creation auto-navigating to LOBBY');
+                      setView(VIEWS.LOBBY);
+                    } else if ((data?.status === 'COMPLETED' || data?.currentRound === 7) && view !== VIEWS.GAME) {
+                      // If game is completed, navigate to game view (which shows end screen for round 7)
+                      console.log('🔧 Game creation auto-navigating to GAME (completed)');
+                      setView(VIEWS.GAME);
+                    }
                   });
                   setGameSubscription(() => subscription);
                   
