@@ -175,6 +175,82 @@ export default function App() {
     setView(VIEWS.JOIN_GAME);
   };
 
+  const handleJoinGame = async () => {
+    if (!gameCode.trim()) {
+      setJoinInputError('Please enter a game code');
+      return;
+    }
+
+    if (gameCode.trim().length !== 6) {
+      setJoinInputError('Game code must be 6 characters');
+      return;
+    }
+
+    try {
+      setGameLoading(true);
+      setJoinInputError('');
+
+      console.log('🔧 Attempting to join game with code:', gameCode);
+
+      // Check if the game exists
+      const gameData = await firebaseService.getGameData(gameCode);
+      if (!gameData) {
+        setJoinInputError('Game not found. Please check the code.');
+        return;
+      }
+
+      // Check if game is in LOBBY state
+      if (gameData.status !== 'LOBBY') {
+        setJoinInputError('This game has already started. You cannot join now.');
+        return;
+      }
+
+      // Check if game is full
+      if (gameData.players && gameData.players.length >= gameData.maxPlayers) {
+        setJoinInputError('This game is full. Cannot join.');
+        return;
+      }
+
+      // Check if player is already in the game
+      const existingPlayer = gameData.players?.find(p => p.userId === username);
+      if (existingPlayer) {
+        setJoinInputError('You are already in this game.');
+        return;
+      }
+
+      // Join the game
+      const joinResult = await firebaseService.joinGame(gameCode, username || 'anonymous', username || 'Anonymous Player');
+      console.log('🔧 Successfully joined game:', joinResult);
+
+      // Set the game data
+      setGameId(gameCode);
+      setSelectedGameScript(gameData.gameScriptId);
+
+      // Set up real-time subscription
+      const subscription = firebaseService.subscribeToGame(gameCode, (data) => {
+        console.log('🔧 Real-time game update after join:', {
+          gameId: data.gameId,
+          currentRound: data.currentRound,
+          roundState: data.roundState,
+          status: data.status,
+          playersCount: data.players?.length || 0,
+          playersReady: data.players?.filter(p => p.roundStates?.[1]?.ready).length || 0,
+          allPlayersReady: data.players?.every(p => p.roundStates?.[1]?.ready) || false
+        });
+        setGameData(data);
+      });
+      setGameSubscription(() => subscription);
+
+      // Navigate to character selection
+      setView(VIEWS.CHARACTER_SELECTION);
+    } catch (error) {
+      console.error('Error joining game:', error);
+      setJoinInputError(`Failed to join game: ${error.message || 'Unknown error'}`);
+    } finally {
+      setGameLoading(false);
+    }
+  };
+
   const myGames = () => {
     setView(VIEWS.MY_GAMES);
   };
@@ -360,17 +436,21 @@ export default function App() {
               onSelectCharacter={async (character) => {
                 console.log('Character selected:', character.characterName);
                 try {
-                  // First, ensure the player is in the game
-                  console.log('🔧 Joining game as player...');
-                  const joinResult = await firebaseService.joinGame(gameId, username || 'anonymous', username || 'Anonymous Player');
-                  console.log('🔧 Player joined game successfully, result:', joinResult);
+                  // Check if player is already in the game (for joining existing games)
+                  const currentGameData = await firebaseService.getGameData(gameId);
+                  const existingPlayer = currentGameData?.players?.find(p => p.userId === username);
                   
-                  // Verify the player was actually added
-                  const gameDataAfterJoin = await firebaseService.getGameData(gameId);
-                  console.log('🔧 Player joined successfully. Game now has', gameDataAfterJoin?.players?.length || 0, 'players');
+                  if (!existingPlayer) {
+                    // Player not in game yet, add them first (for new games)
+                    console.log('🔧 Player not in game yet, adding them first...');
+                    const joinResult = await firebaseService.joinGame(gameId, username || 'anonymous', username || 'Anonymous Player');
+                    console.log('🔧 Player joined game successfully, result:', joinResult);
+                  } else {
+                    console.log('🔧 Player already in game, proceeding to character selection...');
+                  }
                   
-                  // Then select the character
-                  console.log('🔧 Now selecting character...');
+                  // Now select the character
+                  console.log('🔧 Selecting character:', character.characterName);
                   await firebaseService.selectCharacter(gameId, username || 'anonymous', character.characterName);
                   console.log('🔧 Character selected in Firebase, navigating to lobby...');
                   
@@ -583,6 +663,18 @@ export default function App() {
                 // TODO: Implement player script modal
               }}
               scrollViewRef={gameScrollViewRef}
+            />
+          )}
+          
+          {view === VIEWS.JOIN_GAME && (
+            <JoinGameView
+              gameCode={gameCode}
+              setGameCode={setGameCode}
+              onJoin={handleJoinGame}
+              onBack={() => setView(VIEWS.HOME)}
+              gameLoading={gameLoading}
+              inputError={joinInputError}
+              dynamicStyles={dynamicStyles}
             />
           )}
           

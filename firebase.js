@@ -283,9 +283,12 @@ class FirebaseService {
     const gameRef = this.db.collection('games').doc(gameId);
     const playerRef = gameRef.collection('players').doc(userId);
     
+    console.log('🔧 Adding player to game:', { gameId, userId, username, isHost });
+    console.log('🔧 Player data to set:', playerData);
+    
     await playerRef.set(playerData);
     
-    
+    console.log('🔧 Player document created successfully in players subcollection');
     
     return this.getGameData(gameId);
   }
@@ -306,15 +309,15 @@ class FirebaseService {
       const gameRef = this.db.collection('games').doc(gameId);
       const gameDoc = await gameRef.get();
 
-      if (!gameDoc.exists) {
+      if (!gameDoc._exists) {
         throw new Error('Game not found');
       }
 
-      const gameData = gameDoc.data();
+      const gameData = gameDoc._data;
       
       // Check if player is already in the game
       const playerDoc = await gameRef.collection('players').doc(userId).get();
-      if (playerDoc.exists) {
+      if (playerDoc._exists) {
         this.currentGameId = gameId;
         return gameData;
       }
@@ -422,8 +425,19 @@ class FirebaseService {
   // Assign character to player
   async assignCharacter(gameId, userId, characterName) {
     try {
+      console.log('🔧 assignCharacter called:', { gameId, userId, characterName });
+      
       const gameRef = this.db.collection('games').doc(gameId);
       const playerRef = gameRef.collection('players').doc(userId);
+      
+      // Check if player document exists before trying to update it
+      const playerDoc = await playerRef.get();
+      if (!playerDoc._exists) {
+        console.error('🔧 Player document does not exist for userId:', userId);
+        throw new Error(`Player document not found for user: ${userId}`);
+      }
+      
+      console.log('🔧 Player document exists, proceeding with character assignment');
       
       // Get character data from game script
       const gameData = await this.getGameData(gameId);
@@ -440,7 +454,10 @@ class FirebaseService {
         };
       }
       
+      console.log('🔧 Updating player with character data:', updateData);
       await playerRef.update(updateData);
+      
+      console.log('🔧 Character assigned successfully');
     } catch (error) {
       console.error('Error assigning character:', error);
       throw new Error('Failed to assign character');
