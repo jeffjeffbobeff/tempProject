@@ -246,6 +246,15 @@ class FirebaseService {
       // Create initial host player
       await this.addPlayerToGame(gameId, hostUserId, hostUsername, true);
       
+      // Add game to host's games collection
+      const hostGameRef = this.db.collection('users').doc(hostUserId).collection('games').doc(gameId);
+      await hostGameRef.set({
+        gameId,
+        role: 'host',
+        joinedAt: Date.now(),
+        lastActiveAt: Date.now()
+      });
+      
       console.log('🔧 Game created successfully with ID:', gameId);
       return gameId;
     } catch (error) {
@@ -324,6 +333,15 @@ class FirebaseService {
 
       // Add new player to the game
       await this.addPlayerToGame(gameId, userId, username, false);
+      
+      // Add game to user's games collection
+      const userGameRef = this.db.collection('users').doc(userId).collection('games').doc(gameId);
+      await userGameRef.set({
+        gameId,
+        role: 'player',
+        joinedAt: Date.now(),
+        lastActiveAt: Date.now()
+      });
       
       return this.getGameData(gameId);
     } catch (error) {
@@ -903,6 +921,52 @@ class FirebaseService {
     // TODO: Implement invitation logic (send notification, update invites collection, etc.)
     console.log(`Stub: inviteToGame called for gameId=${gameId}, inviteeUserId=${inviteeUserId}, inviterUserId=${inviterUserId}`);
     return true;
+  }
+
+  // Get all games a user has participated in
+  async getUserGames(userId, includeDeleted = false) {
+    if (!this.db) {
+      throw new Error('Firestore database is not initialized. Make sure Firebase is initialized before calling getUserGames.');
+    }
+    try {
+      // Get user's game list
+      const userGamesSnapshot = await this.db.collection('users').doc(userId)
+        .collection('games')
+        .get();
+
+      const userGames = [];
+      
+      for (const doc of userGamesSnapshot.docs) {
+        const userGameData = doc.data();
+        
+        // Get the actual game data including players
+        const gameData = await this.getGameData(userGameData.gameId);
+        
+        if (gameData) {
+          // Skip deleted games unless specifically requested
+          if (!includeDeleted && gameData.deletedAt) {
+            continue;
+          }
+          
+          userGames.push({
+            ...userGameData,
+            gameData: {
+              ...gameData,
+              // Ensure we have the gameId
+              gameId: userGameData.gameId
+            }
+          });
+        }
+      }
+
+      // Sort by last active (most recent first)
+      userGames.sort((a, b) => (b.lastActiveAt || 0) - (a.lastActiveAt || 0));
+
+      return userGames;
+    } catch (error) {
+      console.error('Error getting user games:', error);
+      throw error;
+    }
   }
 
   // Cleanup old/deleted games (stub)

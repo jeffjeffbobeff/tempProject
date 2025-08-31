@@ -274,22 +274,8 @@ export default function App() {
     
     try {
       setMyGamesLoading(true);
-      // For now, we'll use a mock implementation since proper user game tracking isn't implemented yet
-      // This can be enhanced later with proper Firebase queries
-      const mockGames = [
-        {
-          gameId: 'DEMO1',
-          gameData: {
-            gameScriptId: '1',
-            status: 'LOBBY',
-            hostUserId: username,
-            players: [{ userId: username, username }],
-            currentRound: 0
-          },
-          role: 'host'
-        }
-      ];
-      setMyGamesData(mockGames);
+      const games = await firebaseService.getUserGames(username);
+      setMyGamesData(games || []);
     } catch (error: any) {
       console.error('Error loading my games:', error);
       Alert.alert('Error', 'Failed to load your games');
@@ -356,27 +342,7 @@ export default function App() {
     }
   };
 
-  // Wrapper functions for MyGamesView compatibility
-  const handleGoToGameWrapper = () => {
-    // This will be called when the Go button is pressed
-    // The actual game data will be passed through context or we'll need to modify the component
-    console.log('Go button pressed - need to implement game selection');
-  };
 
-  const handleInviteToGameWrapper = () => {
-    // This will be called when the Invite button is pressed
-    console.log('Invite button pressed - need to implement game selection');
-  };
-
-  const handleDeleteGameWrapper = () => {
-    // This will be called when the Delete button is pressed
-    console.log('Delete button pressed - need to implement game selection');
-  };
-
-  const handleSetMyGamesFilterWrapper = () => {
-    // This will be called when filter is changed
-    console.log('Filter changed - need to implement filter selection');
-  };
 
   const onBackToOnboarding = () => {
     // Pre-populate input with existing username for editing
@@ -806,10 +772,10 @@ export default function App() {
               myGames={myGamesData}
               myGamesLoading={myGamesLoading}
               myGamesFilter={myGamesFilter}
-              setMyGamesFilter={handleSetMyGamesFilterWrapper}
-              onGo={handleGoToGameWrapper}
-              onInvite={handleInviteToGameWrapper}
-              onDelete={handleDeleteGameWrapper}
+              setMyGamesFilter={setMyGamesFilter}
+              onGo={handleGoToGame}
+              onInvite={handleInviteToGame}
+              onDelete={handleDeleteGame}
               onBack={() => setView(VIEWS.HOME)}
               dynamicStyles={dynamicStyles}
             />
