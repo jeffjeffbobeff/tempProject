@@ -16,6 +16,7 @@ import {
   ScrollView,
   Dimensions,
   Modal,
+  Alert,
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import BackgroundWrapper from './components/BackgroundWrapper';
@@ -55,6 +56,12 @@ if (__DEV__) {
 }
 
 // ============================================================================
+// TYPES
+// ============================================================================
+
+type GameScript = any;
+
+// ============================================================================
 // CONSTANTS
 // ============================================================================
 
@@ -89,27 +96,27 @@ export default function App() {
   
   // Game loading state
   const [gameLoading, setGameLoading] = useState(false);
-  const [gameId, setGameId] = useState(null);
-  const [selectedGameScript, setSelectedGameScript] = useState(null);
-  const [gameSubscription, setGameSubscription] = useState(null);
+  const [gameId, setGameId] = useState<string | null>(null);
+  const [selectedGameScript, setSelectedGameScript] = useState<string | null>(null);
+  const [gameSubscription, setGameSubscription] = useState<(() => void) | null>(null);
   const [gameData, setGameData] = useState<any>(null);
-  const [selectedCharacter, setSelectedCharacter] = useState(null);
+  const [selectedCharacter, setSelectedCharacter] = useState<any>(null);
   const [gameCode, setGameCode] = useState('');
   const [joinInputError, setJoinInputError] = useState('');
   
   // Available game scripts state
-  const [availableGameScripts, setAvailableGameScripts] = useState<any[]>([]);
+  const [availableGameScripts, setAvailableGameScripts] = useState<GameScript[]>([]);
 
   // Host control modal states
   const [showPlayerScriptModal, setShowPlayerScriptModal] = useState(false);
-  const [selectedPlayerForScript, setSelectedPlayerForScript] = useState(null);
+  const [selectedPlayerForScript, setSelectedPlayerForScript] = useState<any>(null);
 
   // ScrollView refs for scroll to top functionality
-  const gameScrollViewRef = useRef(null);
-  const lobbyScrollViewRef = useRef(null);
-  const characterSelectionScrollViewRef = useRef(null);
-  const gameSelectionScrollViewRef = useRef(null);
-  const introductionScrollViewRef = useRef(null);
+  const gameScrollViewRef = useRef<ScrollView>(null);
+  const lobbyScrollViewRef = useRef<ScrollView>(null);
+  const characterSelectionScrollViewRef = useRef<ScrollView>(null);
+  const gameSelectionScrollViewRef = useRef<ScrollView>(null);
+  const introductionScrollViewRef = useRef<ScrollView>(null);
 
   // Hamburger menu state
   const [showMenu, setShowMenu] = useState(false);
@@ -137,9 +144,9 @@ export default function App() {
   const initializeApp = async () => {
     try {
       // Load available game scripts
-      const scripts = gameScriptService.getAvailableScripts();
-      console.log('🔧 Script IDs:', scripts.map(s => s.scriptId));
-      setAvailableGameScripts(scripts);
+      const scripts: any[] = gameScriptService.getAvailableScripts();
+      console.log('🔧 Script IDs:', scripts.map((s: any) => s.scriptId));
+      setAvailableGameScripts(scripts as any[]);
       
       // Load saved text size
       const savedTextSize = await AsyncStorage.getItem('textSize');
@@ -157,7 +164,7 @@ export default function App() {
       }
       
       setLoading(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error initializing app:', error);
       setLoading(false);
     }
@@ -212,7 +219,7 @@ export default function App() {
       }
 
       // Check if player is already in the game
-      const existingPlayer = gameData.players?.find(p => p.userId === username);
+      const existingPlayer = gameData.players?.find((p: any) => p.userId === username);
       if (existingPlayer) {
         setJoinInputError('You are already in this game.');
         return;
@@ -227,15 +234,15 @@ export default function App() {
       setSelectedGameScript(gameData.gameScriptId);
 
       // Set up real-time subscription
-      const subscription = firebaseService.subscribeToGame(gameCode, (data) => {
+      const subscription = firebaseService.subscribeToGame(gameCode, (data: any) => {
         console.log('🔧 Real-time game update after join:', {
           gameId: data.gameId,
           currentRound: data.currentRound,
           roundState: data.roundState,
           status: data.status,
           playersCount: data.players?.length || 0,
-          playersReady: data.players?.filter(p => p.roundStates?.[1]?.ready).length || 0,
-          allPlayersReady: data.players?.every(p => p.roundStates?.[1]?.ready) || false
+          playersReady: data.players?.filter((p: any) => p.roundStates?.[1]?.ready).length || 0,
+          allPlayersReady: data.players?.every((p: any) => p.roundStates?.[1]?.ready) || false
         });
         setGameData(data);
       });
@@ -243,7 +250,7 @@ export default function App() {
 
       // Navigate to character selection
       setView(VIEWS.CHARACTER_SELECTION);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error joining game:', error);
       setJoinInputError(`Failed to join game: ${error.message || 'Unknown error'}`);
     } finally {
@@ -282,7 +289,7 @@ export default function App() {
       setInput('');
       setInputError('');
       setView(VIEWS.HOME);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving username:', error);
       setInputError('Error saving username. Please try again.');
     }
@@ -297,7 +304,7 @@ export default function App() {
       await AsyncStorage.setItem('textSize', size);
       setTextSize(size);
       setShowTextSizeModal(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving text size:', error);
     }
   };
@@ -395,15 +402,15 @@ export default function App() {
                   }
                   
                   // Set up proper real-time subscription using the service method
-                  const subscription = firebaseService.subscribeToGame(newGameId, (data) => {
+                  const subscription = firebaseService.subscribeToGame(newGameId, (data: any) => {
                     console.log('🔧 Real-time game update:', {
                       gameId: data.gameId,
                       currentRound: data.currentRound,
                       roundState: data.roundState,
                       status: data.status,
                       playersCount: data.players?.length || 0,
-                      playersReady: data.players?.filter(p => p.roundStates?.[1]?.ready).length || 0,
-                      allPlayersReady: data.players?.every(p => p.roundStates?.[1]?.ready) || false
+                      playersReady: data.players?.filter((p: any) => p.roundStates?.[1]?.ready).length || 0,
+                      allPlayersReady: data.players?.every((p: any) => p.roundStates?.[1]?.ready) || false
                     });
                     setGameData(data);
                   });
@@ -411,10 +418,10 @@ export default function App() {
                   
                   // Navigate to character selection (not introduction)
                   setView(VIEWS.CHARACTER_SELECTION);
-                } catch (error) {
+                } catch (error: any) {
                   console.error('Error launching game:', error);
                   // Show error to user instead of pretending it worked
-                  alert(`Failed to create game: ${error.message || 'Unknown error'}`);
+                  Alert.alert('Error', `Failed to create game: ${error.message || 'Unknown error'}`);
                 } finally {
                   setGameLoading(false);
                 }
@@ -433,12 +440,12 @@ export default function App() {
               gameData={gameData}
               userId={username || 'anonymous'}
               dynamicStyles={dynamicStyles}
-              onSelectCharacter={async (character) => {
+              onSelectCharacter={async (character: any) => {
                 console.log('Character selected:', character.characterName);
                 try {
                   // Check if player is already in the game (for joining existing games)
                   const currentGameData = await firebaseService.getGameData(gameId);
-                  const existingPlayer = currentGameData?.players?.find(p => p.userId === username);
+                  const existingPlayer = currentGameData?.players?.find((p: any) => p.userId === username);
                   
                   if (!existingPlayer) {
                     // Player not in game yet, add them first (for new games)
@@ -456,9 +463,9 @@ export default function App() {
                   
                   // Navigate to lobby - the real-time listener will update gameData
                   setView(VIEWS.LOBBY);
-                } catch (error) {
+                } catch (error: any) {
                   console.error('Error selecting character:', error);
-                  alert('Failed to select character: ' + (error.message || 'Unknown error'));
+                  Alert.alert('Error', 'Failed to select character: ' + (error.message || 'Unknown error'));
                 }
               }}
               onKeepCharacter={() => {
@@ -479,7 +486,7 @@ export default function App() {
             const getCurrentPlayer = () => {
               if (!gameData?.players || !username) return null;
               if (!Array.isArray(gameData.players)) return null;
-              return gameData.players.find(p => p.userId === username);
+              return gameData.players.find((p: any) => p.userId === username);
             };
 
             // Helper: is host
@@ -492,8 +499,8 @@ export default function App() {
             const getAvailableCharactersForVirtuals = () => {
               if (!gameData || !gameData.players) return [];
               if (!Array.isArray(gameData.players)) return [];
-              const assignedCharacters = gameData.players.filter(p => p.characterName).map(p => p.characterName);
-              return gameScriptService.getCharacters(gameData.gameScriptId).filter(character => {
+              const assignedCharacters = gameData.players.filter((p: any) => p.characterName).map((p: any) => p.characterName);
+              return gameScriptService.getCharacters(gameData.gameScriptId).filter((character: any) => {
                 return !assignedCharacters.includes(character.characterName);
               });
             };
@@ -502,18 +509,18 @@ export default function App() {
             const minPlayers = gameScriptService.getGameScript(gameData?.gameScriptId)?.gameFlow?.minPlayers || 8;
             const maxPlayers = gameScriptService.getGameScript(gameData?.gameScriptId)?.gameFlow?.maxPlayers || 8;
             const allPlayersJoined = gameData?.players?.length >= minPlayers;
-            const allCharactersAssigned = gameData?.players?.every(p => p.characterName);
+            const allCharactersAssigned = gameData?.players?.every((p: any) => p.characterName);
             const canStartGame = isHost() && allPlayersJoined && allCharactersAssigned;
 
             // Copy game code
             const handleCopyGameCode = () => {
               if (!gameId) return;
               Clipboard.setString(gameId);
-              alert('Game code copied to clipboard!');
+                                Alert.alert('Success', 'Game code copied to clipboard!');
             };
 
             // Add virtual player
-            const handleAddVirtualPlayer = async (character) => {
+            const handleAddVirtualPlayer = async (character: any) => {
               if (!gameId) return;
               try {
                 const charName = character.characterName || character.Character;
@@ -533,7 +540,7 @@ export default function App() {
                 if (firebaseService.db) {
                   try {
                     const playerDoc = await firebaseService.db.collection('games').doc(gameId).collection('players').doc(userIdVirtual).get();
-                    if (!playerDoc._exists) {
+                    if (!playerDoc.exists()) {
                       console.log('🔧 Virtual player document missing, creating manually...');
                       // Try to manually create the player document to see what error we get
                       try {
@@ -557,16 +564,16 @@ export default function App() {
                         console.error('🔧 Error creating virtual player document:', manualError);
                       }
                     }
-                  } catch (error) {
+                  } catch (error: any) {
                     console.error('🔧 Error checking player document:', error);
                   }
                 }
                 
                 await firebaseService.selectCharacter(gameId, userIdVirtual, charName);
                 console.log('🔧 Virtual player', charName, 'added and character assigned successfully');
-              } catch (error) {
+              } catch (error: any) {
                 console.error('Error adding virtual player:', error);
-                alert('Failed to add virtual player: ' + (error.message || 'Unknown error'));
+                                  Alert.alert('Error', 'Failed to add virtual player: ' + (error.message || 'Unknown error'));
               }
             };
 
@@ -577,9 +584,9 @@ export default function App() {
                 await firebaseService.startGame(gameId);
                 // Force navigation to INTRODUCTION view when game starts
                 setView(VIEWS.INTRODUCTION);
-              } catch (error) {
+              } catch (error: any) {
                 console.error('Error in startGame:', error);
-                alert('Cannot Start Game: ' + (error.message || 'Failed to start game.'));
+                                  Alert.alert('Error', 'Cannot Start Game: ' + (error.message || 'Failed to start game.'));
               }
             };
 
@@ -624,9 +631,9 @@ export default function App() {
                   console.log('🔧 Completing Introduction (Round 1) and advancing to first gameplay round...');
                   await firebaseService.advanceRound(gameId);
                   console.log('🔧 Successfully advanced to first gameplay round');
-                } catch (error) {
+                } catch (error: any) {
                   console.error('🔧 Error advancing round:', error);
-                  alert('Failed to advance round: ' + (error.message || 'Unknown error'));
+                  Alert.alert('Error', 'Failed to advance round: ' + (error.message || 'Unknown error'));
                 }
               }}
               onNavigateToNextView={() => {
@@ -649,16 +656,16 @@ export default function App() {
                   console.log('🔧 Advancing to next round from Game view...');
                   await firebaseService.advanceRound(gameId);
                   console.log('🔧 Successfully advanced to next round');
-                } catch (error) {
+                } catch (error: any) {
                   console.error('🔧 Error advancing round:', error);
-                  alert('Failed to advance round: ' + (error.message || 'Unknown error'));
+                  Alert.alert('Error', 'Failed to advance round: ' + (error.message || 'Unknown error'));
                 }
               }}
               onExitGame={() => {
                 console.log('🔧 Exiting game, returning to home');
                 setView(VIEWS.HOME);
               }}
-              onShowPlayerScript={(player) => {
+              onShowPlayerScript={(player: any) => {
                 console.log('🔧 Showing script for player:', player.username);
                 // TODO: Implement player script modal
               }}
