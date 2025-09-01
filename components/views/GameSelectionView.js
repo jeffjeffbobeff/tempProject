@@ -60,7 +60,7 @@ export default function GameSelectionView({ availableGameScripts = [], onBack, o
             <Text
               style={[
                 dynamicStyles && dynamicStyles.header ? dynamicStyles.header : styles.header,
-                { flexWrap: 'wrap', width: '90%', alignSelf: 'center' }
+                { flexWrap: 'wrap', width: '90%', alignSelf: 'center', paddingHorizontal: 60 }
               ]}
               numberOfLines={2}
               allowFontScaling

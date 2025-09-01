@@ -50,7 +50,7 @@ class FirebaseService {
   async initializeFirebaseWithRetry(maxRetries = 3) {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`🔧 Firebase initialization attempt ${attempt}/${maxRetries}`);
+  
         
         // Try to get the Firestore instance directly
         const firestoreInstance = firestore();
@@ -58,10 +58,10 @@ class FirebaseService {
         // Test if we can actually use it
         if (firestoreInstance && typeof firestoreInstance.collection === 'function') {
           this.db = firestoreInstance;
-          console.log('🔧 Firebase service initialized successfully');
+    
           
           // Skip the test read to prevent hanging
-          console.log('🔧 Firebase service ready - skipping test read to prevent hanging');
+    
           
           return true; // Return true on successful initialization
         } else {
@@ -71,7 +71,7 @@ class FirebaseService {
         console.error(`🔧 Firebase initialization attempt ${attempt} failed:`, error);
         
         if (attempt === maxRetries) {
-          console.log('🔧 All Firebase initialization attempts failed, using mock mode');
+    
           this.db = null;
           return false; // Return false on failure
         } else {
@@ -89,11 +89,11 @@ class FirebaseService {
         throw new Error('Firebase not initialized');
       }
       
-      console.log('🔧 Testing Firebase connection...');
+  
       
       // Try a simple read operation
       const testDoc = await this.db.collection('games').limit(1).get();
-      console.log('🔧 Firebase test successful, docs count:', testDoc.docs.length);
+
       
       return true;
     } catch (error) {
@@ -149,7 +149,7 @@ class FirebaseService {
         
         if (!gameDoc._exists) {
           // Game ID is unique, return it
-          console.log(`🔧 Generated unique game ID: ${gameId}`);
+    
           return gameId;
         }
         
@@ -159,7 +159,7 @@ class FirebaseService {
         }
         
         // Continue to next attempt
-        console.log(`🔧 Game ID ${gameId} exists, trying again...`);
+
       } catch (error) {
         console.error(`🔧 Error generating game ID on attempt ${attempt}:`, error);
         
@@ -178,7 +178,7 @@ class FirebaseService {
   // Create a new game session with the new data structure
   async createGame(hostUserId, hostUsername, scriptId = 'opera_murder_mystery_v1') {
     try {
-      console.log('🔧 Creating game for host:', hostUsername, 'with script:', scriptId);
+
       
       // Ensure Firebase is ready
       if (!this.db) {
@@ -255,7 +255,7 @@ class FirebaseService {
         lastActiveAt: Date.now()
       });
       
-      console.log('🔧 Game created successfully with ID:', gameId);
+
       return gameId;
     } catch (error) {
       console.error('Error creating game:', error);
@@ -292,12 +292,11 @@ class FirebaseService {
     const gameRef = this.db.collection('games').doc(gameId);
     const playerRef = gameRef.collection('players').doc(userId);
     
-    console.log('🔧 Adding player to game:', { gameId, userId, username, isHost });
-    console.log('🔧 Player data to set:', playerData);
+    
     
     await playerRef.set(playerData);
     
-    console.log('🔧 Player document created successfully in players subcollection');
+    
     
     return this.getGameData(gameId);
   }
@@ -443,7 +442,7 @@ class FirebaseService {
   // Assign character to player
   async assignCharacter(gameId, userId, characterName) {
     try {
-      console.log('🔧 assignCharacter called:', { gameId, userId, characterName });
+
       
       const gameRef = this.db.collection('games').doc(gameId);
       const playerRef = gameRef.collection('players').doc(userId);
@@ -455,7 +454,7 @@ class FirebaseService {
         throw new Error(`Player document not found for user: ${userId}`);
       }
       
-      console.log('🔧 Player document exists, proceeding with character assignment');
+      
       
       // Get character data from game script
       const gameData = await this.getGameData(gameId);
@@ -472,10 +471,10 @@ class FirebaseService {
         };
       }
       
-      console.log('🔧 Updating player with character data:', updateData);
+      
       await playerRef.update(updateData);
       
-      console.log('🔧 Character assigned successfully');
+      
     } catch (error) {
       console.error('Error assigning character:', error);
       throw new Error('Failed to assign character');
@@ -540,7 +539,7 @@ class FirebaseService {
 
   // Advance to next round
   async advanceRound(gameId) {
-    console.log('advanceRound called for gameId:', gameId);
+
     try {
       // Real Firebase implementation
       const gameRef = this.db.collection('games').doc(gameId);
@@ -620,7 +619,7 @@ class FirebaseService {
         introductionShown: true
       });
       
-      console.log('Introduction marked as shown for game:', gameId);
+
     } catch (error) {
       console.error('Error marking introduction as shown:', error);
       throw new Error('Failed to mark introduction as shown');
@@ -751,9 +750,9 @@ class FirebaseService {
 
   // Force Firebase initialization (for testing)
   async forceFirebaseInitialization() {
-    console.log('🔧 Forcing Firebase initialization...');
+    
     await this.initializeFirebaseWithRetry(5);
-    console.log('🔧 Firebase initialization result:', { db: !!this.db });
+    
     return this.isFirebaseWorking();
   }
 
@@ -773,7 +772,7 @@ class FirebaseService {
     try {
       const userRef = this.db.collection('users').doc(userId);
       await userRef.delete();
-      console.log('Deleted user profile for:', userId);
+
       return true;
     } catch (error) {
       console.error('Error deleting user profile:', error);
@@ -877,7 +876,7 @@ class FirebaseService {
         }
       }
 
-      console.log('Soft deleted game for all participants:', gameId);
+
       return true;
     } catch (error) {
       console.error('Error soft deleting game:', error);
@@ -919,7 +918,7 @@ class FirebaseService {
   // Invite a user to a game (stub)
   async inviteToGame(gameId, inviteeUserId, inviterUserId) {
     // TODO: Implement invitation logic (send notification, update invites collection, etc.)
-    console.log(`Stub: inviteToGame called for gameId=${gameId}, inviteeUserId=${inviteeUserId}, inviterUserId=${inviterUserId}`);
+    
     return true;
   }
 
@@ -972,7 +971,7 @@ class FirebaseService {
   // Cleanup old/deleted games (stub)
   async cleanupOldGames(options = {}) {
     // TODO: Implement cleanup logic for old or deleted games
-    console.log('Stub: cleanupOldGames called with options:', options);
+    
     return true;
   }
 }

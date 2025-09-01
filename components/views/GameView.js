@@ -42,7 +42,6 @@ export default function GameView({
   const getCurrentPlayer = () => {
     if (!gameData?.players || !userId) return null;
     if (!Array.isArray(gameData.players)) {
-      console.warn('gameData.players is not an array in getCurrentPlayer:', gameData.players);
       return null;
     }
     return gameData.players.find(p => p.userId === userId);
@@ -84,7 +83,6 @@ export default function GameView({
     if (!gameData?.players) return {};
     
     if (!Array.isArray(gameData.players)) {
-      console.warn('gameData.players is not an array in getAccusationVoteTotals:', gameData.players);
       return {};
     }
     
@@ -117,7 +115,6 @@ export default function GameView({
     if (!gameData || !gameData.players) return false;
     
     if (!Array.isArray(gameData.players)) {
-      console.warn('gameData.players is not an array in allPlayersReadyForRound:', gameData.players);
       return false;
     }
     

@@ -33,7 +33,6 @@ export default function CharacterSelectionView({
   const getCurrentPlayer = () => {
     if (!gameData?.players || !userId) return null;
     if (!Array.isArray(gameData.players)) {
-      console.warn('gameData.players is not an array in getCurrentPlayer:', gameData.players);
       return null;
     }
     return gameData.players.find(p => p.userId === userId);

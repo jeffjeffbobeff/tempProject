@@ -31,7 +31,7 @@ export default function IntroductionView({
   // Auto-navigate when round changes (e.g., from introduction round 1 to first gameplay round 2)
   useEffect(() => {
     if (gameData?.currentRound && gameData.currentRound > 1 && !hasNavigated.current) {
-      console.log('🔧 Round advanced from Introduction (Round 1) to first gameplay round', gameData.currentRound, '- auto-navigating to next view');
+  
       hasNavigated.current = true; // Prevent multiple navigation attempts
       // Navigate to the next view since the round has already advanced
       if (onNavigateToNextView) {
@@ -49,7 +49,6 @@ export default function IntroductionView({
   const getCurrentPlayer = () => {
     if (!gameData?.players || !userId) return null;
     if (!Array.isArray(gameData.players)) {
-      console.warn('gameData.players is not an array in getCurrentPlayer:', gameData.players);
       return null;
     }
     return gameData.players.find(p => p.userId === userId);
@@ -73,42 +72,20 @@ export default function IntroductionView({
   const isReady = currentPlayer?.roundStates?.[1]?.ready || false;
   const allPlayersReady = gameData?.players?.every(p => p.roundStates?.[1]?.ready || false);
 
-  // Enhanced debug logging
-  console.log('🔧 INTRODUCTION screen debug (Round 1 - Setup):', {
-    currentPlayer: currentPlayer?.userId,
-    isReady,
-    allPlayersReady,
-    currentRound: gameData?.currentRound,
-    playersCount: gameData?.players?.length,
-    playersReadyCount: gameData?.players?.filter(p => p.roundStates?.[1]?.ready).length,
-    isHost: isHost(),
-    gameId,
-    userId
-  });
+
   
-  // Log each player's ready status
-  if (gameData?.players) {
-    console.log('🔧 Player ready status breakdown:');
-    gameData.players.forEach(player => {
-      console.log(`  - ${player.username} (${player.userId}): ready=${player.roundStates?.[1]?.ready || false}, isHost=${player.isHost}`);
-    });
-  }
+
 
   const handleSetPlayerReady = async (readyStatus) => {
-    console.log('🔧 handleSetPlayerReady called with:', { readyStatus, gameId, userId, currentRound: gameData?.currentRound });
-    
     if (!gameId || !userId) {
-      console.log('🔧 Early return: missing gameId or userId');
       return;
     }
     
     try {
       // Use the current round (1 for introduction)
       const roundToUpdate = gameData?.currentRound;
-      console.log('🔧 Calling firebaseService.updatePlayerReady with:', { gameId, userId, readyStatus, roundToUpdate });
       
       await firebaseService.updatePlayerReady(gameId, userId, readyStatus, roundToUpdate);
-      console.log('🔧 Successfully updated player ready status');
     } catch (error) {
       console.error('🔧 Error setting ready status:', error);
       alert('Failed to update ready status. Please try again.');
@@ -183,14 +160,6 @@ export default function IntroductionView({
             </View>
 
             {/* Host Controls - Only for Host */}
-            {console.log('🔧 Host controls evaluation:', { 
-              isHost: isHost(), 
-              currentPlayerId: currentPlayer?.userId,
-              currentPlayerUsername: currentPlayer?.username,
-              currentPlayerCharacter: currentPlayer?.characterName,
-              currentPlayerIsHost: currentPlayer?.isHost,
-              userId 
-            })}
             {isHost() && (
               <View style={styles.gameInfo}>
                 <TouchableOpacity

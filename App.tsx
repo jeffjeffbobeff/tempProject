@@ -38,22 +38,7 @@ import Clipboard from '@react-native-clipboard/clipboard';
 import MyGamesView from './components/views/MyGamesView';
 import OnboardingView from './components/views/OnboardingView';
 
-// ============================================================================
-// DEVELOPMENT CONSOLE FILTERING
-// ============================================================================
 
-// Filter out Firebase deprecation warnings during development
-if (__DEV__) {
-  const originalConsoleWarn = console.warn;
-  console.warn = (...args) => {
-    // Filter out Firebase deprecation warnings
-    if (args[0] && typeof args[0] === 'string' && args[0].includes('deprecated')) {
-      return; // Don't show deprecation warnings
-    }
-    // Show all other warnings
-    originalConsoleWarn(...args);
-  };
-}
 
 // ============================================================================
 // TYPES
@@ -150,7 +135,6 @@ export default function App() {
     try {
       // Load available game scripts
       const scripts: any[] = gameScriptService.getAvailableScripts();
-      console.log('🔧 Script IDs:', scripts.map((s: any) => s.scriptId));
       setAvailableGameScripts(scripts as any[]);
       
       // Load saved text size
@@ -173,6 +157,24 @@ export default function App() {
       console.error('Error initializing app:', error);
       setLoading(false);
     }
+  };
+
+  // ============================================================================
+  // PLAYER SCRIPT FUNCTIONS
+  // ============================================================================
+  
+  // Show player script modal
+  const showPlayerScript = (player: any) => {
+    setSelectedPlayerForScript(player);
+    setShowPlayerScriptModal(true);
+  };
+
+  // Get player script for host
+  const getPlayerScriptForHost = (playerId: string, round: number) => {
+    const player = gameData?.players?.find((p: any) => p.userId === playerId);
+    if (!player?.characterName) return null;
+    
+    return gameScriptService.getCharacterScript(gameData?.gameScriptId, player.characterName, round);
   };
 
   // ============================================================================
@@ -202,7 +204,7 @@ export default function App() {
       setGameLoading(true);
       setJoinInputError('');
 
-      console.log('🔧 Attempting to join game with code:', gameCode);
+
 
       // Check if the game exists
       const gameData = await firebaseService.getGameData(gameCode);
@@ -232,7 +234,7 @@ export default function App() {
 
       // Join the game
       const joinResult = await firebaseService.joinGame(gameCode, username || 'anonymous', username || 'Anonymous Player');
-      console.log('🔧 Successfully joined game:', joinResult);
+
 
       // Set the game data
       setGameId(gameCode);
@@ -240,15 +242,6 @@ export default function App() {
 
       // Set up real-time subscription
       const subscription = firebaseService.subscribeToGame(gameCode, (data: any) => {
-        console.log('🔧 Real-time game update after join:', {
-          gameId: data.gameId,
-          currentRound: data.currentRound,
-          roundState: data.roundState,
-          status: data.status,
-          playersCount: data.players?.length || 0,
-          playersReady: data.players?.filter((p: any) => p.roundStates?.[1]?.ready).length || 0,
-          allPlayersReady: data.players?.every((p: any) => p.roundStates?.[1]?.ready) || false
-        });
         setGameData(data);
         
         // Auto-navigate based on game status changes (for non-host players)
@@ -259,28 +252,25 @@ export default function App() {
         const currentPlayer = data?.players?.find((p: any) => p.userId === username);
         const hasCharacter = currentPlayer && currentPlayer.characterName;
         
+
+        
         if (data?.status === 'IN_PROGRESS') {
           // If game is in progress, navigate to appropriate view based on current round
           if (data?.currentRound === 1 && view !== VIEWS.INTRODUCTION && hasCharacter) {
-            console.log('🔧 Auto-navigating to INTRODUCTION (Round 1)');
             setView(VIEWS.INTRODUCTION);
           } else if (data?.currentRound > 1 && view !== VIEWS.GAME && hasCharacter) {
-            console.log('🔧 Auto-navigating to GAME (Round', data.currentRound, ')');
             setView(VIEWS.GAME);
           }
         } else if (data?.status === 'LOBBY' && view !== VIEWS.LOBBY && hasCharacter) {
           // If game is back in lobby, navigate to lobby (only if player has character)
-          console.log('🔧 Auto-navigating to LOBBY');
           setView(VIEWS.LOBBY);
         } else if ((data?.status === 'COMPLETED' || data?.currentRound === 7) && view !== VIEWS.GAME && hasCharacter) {
           // If game is completed, navigate to game view (which shows end screen for round 7)
-          console.log('🔧 Auto-navigating to GAME (completed)');
           setView(VIEWS.GAME);
         }
         
         // If player doesn't have a character, they should stay in CHARACTER_SELECTION
         if (!hasCharacter && view !== VIEWS.CHARACTER_SELECTION) {
-          console.log('🔧 Player has no character, staying in CHARACTER_SELECTION');
           setView(VIEWS.CHARACTER_SELECTION);
         }
       });
@@ -343,25 +333,20 @@ export default function App() {
           if (data?.status === 'IN_PROGRESS') {
             // If game is in progress, navigate to appropriate view based on current round
             if (data?.currentRound === 1 && view !== VIEWS.INTRODUCTION && hasCharacter) {
-              console.log('🔧 MyGames auto-navigating to INTRODUCTION (Round 1)');
               setView(VIEWS.INTRODUCTION);
             } else if (data?.currentRound > 1 && view !== VIEWS.GAME && hasCharacter) {
-              console.log('🔧 MyGames auto-navigating to GAME (Round', data.currentRound, ')');
               setView(VIEWS.GAME);
             }
           } else if (data?.status === 'LOBBY' && view !== VIEWS.LOBBY && hasCharacter) {
             // If game is back in lobby, navigate to lobby (only if player has character)
-            console.log('🔧 MyGames auto-navigating to LOBBY');
             setView(VIEWS.LOBBY);
           } else if ((data?.status === 'COMPLETED' || data?.currentRound === 7) && view !== VIEWS.GAME && hasCharacter) {
             // If game is completed, navigate to game view (which shows end screen for round 7)
-            console.log('🔧 MyGames auto-navigating to GAME (completed)');
             setView(VIEWS.GAME);
           }
           
           // If player doesn't have a character, they should stay in CHARACTER_SELECTION
           if (!hasCharacter && view !== VIEWS.CHARACTER_SELECTION) {
-            console.log('🔧 MyGames: Player has no character, staying in CHARACTER_SELECTION');
             setView(VIEWS.CHARACTER_SELECTION);
           }
         });
@@ -522,8 +507,7 @@ export default function App() {
                 try {
                   setGameLoading(true);
                   
-                  console.log('🔧 onLaunchGame called with scriptId:', scriptId);
-                  console.log('🔧 scriptId type:', typeof scriptId);
+
                   
                   // Ensure Firebase is ready before creating game
                   if (!firebaseService.isReady()) {
@@ -544,22 +528,11 @@ export default function App() {
                   // Get the complete game data including players from Firebase
                   const completeGameData = await firebaseService.getGameData(newGameId);
                   if (completeGameData) {
-                    console.log('🔧 Complete game data after creation:', completeGameData);
-                    console.log('🔧 Players array:', completeGameData.players);
                     setGameData(completeGameData);
                   }
                   
                   // Set up proper real-time subscription using the service method
                   const subscription = firebaseService.subscribeToGame(newGameId, (data: any) => {
-                    console.log('🔧 Real-time game update:', {
-                      gameId: data.gameId,
-                      currentRound: data.currentRound,
-                      roundState: data.roundState,
-                      status: data.status,
-                      playersCount: data.players?.length || 0,
-                      playersReady: data.players?.filter((p: any) => p.roundStates?.[1]?.ready).length || 0,
-                      allPlayersReady: data.players?.every((p: any) => p.roundStates?.[1]?.ready) || false
-                    });
                     setGameData(data);
                     
                     // Auto-navigate based on game status changes (for non-host players)
@@ -573,25 +546,20 @@ export default function App() {
                     if (data?.status === 'IN_PROGRESS') {
                       // If game is in progress, navigate to appropriate view based on current round
                       if (data?.currentRound === 1 && view !== VIEWS.INTRODUCTION && hasCharacter) {
-                        console.log('🔧 Game creation auto-navigating to INTRODUCTION (Round 1)');
                         setView(VIEWS.INTRODUCTION);
                       } else if (data?.currentRound > 1 && view !== VIEWS.GAME && hasCharacter) {
-                        console.log('🔧 Game creation auto-navigating to GAME (Round', data.currentRound, ')');
                         setView(VIEWS.GAME);
                       }
                     } else if (data?.status === 'LOBBY' && view !== VIEWS.LOBBY && hasCharacter) {
                       // If game is back in lobby, navigate to lobby (only if player has character)
-                      console.log('🔧 Game creation auto-navigating to LOBBY');
                       setView(VIEWS.LOBBY);
                     } else if ((data?.status === 'COMPLETED' || data?.currentRound === 7) && view !== VIEWS.GAME && hasCharacter) {
                       // If game is completed, navigate to game view (which shows end screen for round 7)
-                      console.log('🔧 Game creation auto-navigating to GAME (completed)');
                       setView(VIEWS.GAME);
                     }
                     
                     // If player doesn't have a character, they should stay in CHARACTER_SELECTION
                     if (!hasCharacter && view !== VIEWS.CHARACTER_SELECTION) {
-                      console.log('🔧 Game creation: Player has no character, staying in CHARACTER_SELECTION');
                       setView(VIEWS.CHARACTER_SELECTION);
                     }
                   });
@@ -622,7 +590,6 @@ export default function App() {
               userId={username || 'anonymous'}
               dynamicStyles={dynamicStyles}
               onSelectCharacter={async (character: any) => {
-                console.log('Character selected:', character.characterName);
                 try {
                   // Check if player is already in the game (for joining existing games)
                   const currentGameData = await firebaseService.getGameData(gameId);
@@ -630,17 +597,11 @@ export default function App() {
                   
                   if (!existingPlayer) {
                     // Player not in game yet, add them first (for new games)
-                    console.log('🔧 Player not in game yet, adding them first...');
                     const joinResult = await firebaseService.joinGame(gameId, username || 'anonymous', username || 'Anonymous Player');
-                    console.log('🔧 Player joined game successfully, result:', joinResult);
-                  } else {
-                    console.log('🔧 Player already in game, proceeding to character selection...');
                   }
                   
                   // Now select the character
-                  console.log('🔧 Selecting character:', character.characterName);
                   await firebaseService.selectCharacter(gameId, username || 'anonymous', character.characterName);
-                  console.log('🔧 Character selected in Firebase, navigating to lobby...');
                   
                   // Navigate to lobby - the real-time listener will update gameData
                   setView(VIEWS.LOBBY);
@@ -650,12 +611,10 @@ export default function App() {
                 }
               }}
               onKeepCharacter={() => {
-                console.log('Keeping current character');
                 // TODO: Navigate to lobby
                 setView(VIEWS.LOBBY);
               }}
               onRemoveVirtualPlayer={() => {
-                console.log('Removing virtual player');
                 // TODO: Handle virtual player removal
               }}
               scrollViewRef={characterSelectionScrollViewRef}
@@ -707,22 +666,16 @@ export default function App() {
                 const charName = character.characterName || character.Character;
                 const userIdVirtual = `player_${charName.replace(/\W/g, '')}`;
                 const username = charName;
-                console.log('🔧 Adding virtual player:', { charName, userIdVirtual, username });
-                
-                console.log('🔧 Step 1: Joining virtual player to game...');
                 const joinResult = await firebaseService.joinGame(gameId, userIdVirtual, username);
-                console.log('🔧 Virtual player joined game successfully, result:', joinResult);
                 
                 // Verify the player was actually added
                 const gameDataAfterJoin = await firebaseService.getGameData(gameId);
-                console.log('🔧 Virtual player added successfully. Game now has', gameDataAfterJoin?.players?.length || 0, 'players');
                 
                 // Check if the virtual player document actually exists
                 if (firebaseService.db) {
                   try {
                     const playerDoc = await firebaseService.db.collection('games').doc(gameId).collection('players').doc(userIdVirtual).get();
                     if (!playerDoc.exists()) {
-                      console.log('🔧 Virtual player document missing, creating manually...');
                       // Try to manually create the player document to see what error we get
                       try {
                         const playerData = {
@@ -740,7 +693,6 @@ export default function App() {
                           characterData: { isMurderer: false, secretInformation: null }
                         };
                         await firebaseService.db.collection('games').doc(gameId).collection('players').doc(userIdVirtual).set(playerData);
-                        console.log('🔧 Virtual player document created successfully');
                       } catch (manualError) {
                         console.error('🔧 Error creating virtual player document:', manualError);
                       }
@@ -751,7 +703,6 @@ export default function App() {
                 }
                 
                 await firebaseService.selectCharacter(gameId, userIdVirtual, charName);
-                console.log('🔧 Virtual player', charName, 'added and character assigned successfully');
               } catch (error: any) {
                 console.error('Error adding virtual player:', error);
                                   Alert.alert('Error', 'Failed to add virtual player: ' + (error.message || 'Unknown error'));
@@ -809,16 +760,13 @@ export default function App() {
               textSize={textSize}
               onAdvanceToNextRound={async () => {
                 try {
-                  console.log('🔧 Completing Introduction (Round 1) and advancing to first gameplay round...');
                   await firebaseService.advanceRound(gameId);
-                  console.log('🔧 Successfully advanced to first gameplay round');
                 } catch (error: any) {
                   console.error('🔧 Error advancing round:', error);
                   Alert.alert('Error', 'Failed to advance round: ' + (error.message || 'Unknown error'));
                 }
               }}
               onNavigateToNextView={() => {
-                console.log('🔧 Navigating from Introduction to first gameplay round');
                 setView(VIEWS.GAME);
               }}
               scrollViewRef={introductionScrollViewRef}
@@ -834,21 +782,17 @@ export default function App() {
               textSize={textSize}
               onAdvanceToNextRound={async () => {
                 try {
-                  console.log('🔧 Advancing to next round from Game view...');
                   await firebaseService.advanceRound(gameId);
-                  console.log('🔧 Successfully advanced to next round');
                 } catch (error: any) {
                   console.error('🔧 Error advancing round:', error);
                   Alert.alert('Error', 'Failed to advance round: ' + (error.message || 'Unknown error'));
                 }
               }}
               onExitGame={() => {
-                console.log('🔧 Exiting game, returning to home');
                 setView(VIEWS.HOME);
               }}
               onShowPlayerScript={(player: any) => {
-                console.log('🔧 Showing script for player:', player.username);
-                // TODO: Implement player script modal
+                showPlayerScript(player);
               }}
               scrollViewRef={gameScrollViewRef}
             />
@@ -901,6 +845,105 @@ export default function App() {
             styles={styles}
             dynamicStyles={dynamicStyles}
           />
+          
+          {/* Player Script Modal */}
+          <Modal 
+            visible={showPlayerScriptModal} 
+            transparent 
+            animationType="slide" 
+            onRequestClose={() => setShowPlayerScriptModal(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <TouchableOpacity
+                  style={styles.modalCloseX}
+                  onPress={() => setShowPlayerScriptModal(false)}
+                >
+                  <Text style={styles.modalCloseXText}>×</Text>
+                </TouchableOpacity>
+                
+                <ScrollView style={styles.modalScroll}>
+                  {selectedPlayerForScript && (
+                    <>
+                      <Text style={dynamicStyles.modalTitle}>
+                        {selectedPlayerForScript.username}'s Script
+                      </Text>
+                      <Text style={dynamicStyles.modalDescription}>
+                        Character: {selectedPlayerForScript.characterName}
+                      </Text>
+                      
+                      <View style={styles.helpSection}>
+                        {(() => {
+                          const script = getPlayerScriptForHost(selectedPlayerForScript.userId, gameData?.currentRound);
+                          if (!script) {
+                            return <Text style={dynamicStyles.helpSectionContent}>No script available for this round.</Text>;
+                          }
+                          
+                          return (
+                            <>
+                              {script.introduction && (
+                                <>
+                                  <Text style={dynamicStyles.helpSectionTitle}>Introduction:</Text>
+                                  <View style={styles.helpSection}>
+                                    {parseFormattedText(script.introduction, dynamicStyles.helpSectionContent)}
+                                  </View>
+                                </>
+                              )}
+                              
+                              {script.secretInformation && (
+                                <>
+                                  <Text style={dynamicStyles.helpSectionTitle}>Secret Information:</Text>
+                                  <View style={styles.helpSection}>
+                                    {parseFormattedText(script.secretInformation, dynamicStyles.helpSectionContent)}
+                                  </View>
+                                </>
+                              )}
+                              
+                              {script.story && (
+                                <>
+                                  <Text style={dynamicStyles.helpSectionTitle}>Story:</Text>
+                                  <View style={styles.helpSection}>
+                                    {parseFormattedText(script.story, dynamicStyles.helpSectionContent)}
+                                  </View>
+                                </>
+                              )}
+                              
+                              {script.accusation && (
+                                <>
+                                  <Text style={dynamicStyles.helpSectionTitle}>Accusation:</Text>
+                                  <View style={styles.helpSection}>
+                                    {parseFormattedText(script.accusation, dynamicStyles.helpSectionContent)}
+                                  </View>
+                                </>
+                              )}
+                              
+                              {script.accusedOf && (
+                                <>
+                                  <Text style={dynamicStyles.helpSectionTitle}>When Accused:</Text>
+                                  <View style={styles.helpSection}>
+                                    {parseFormattedText(script.rebuttal, dynamicStyles.helpSectionContent)}
+                                  </View>
+                                </>
+                              )}
+                              
+                              {script.finalStatement && (
+                                <>
+                                  <Text style={dynamicStyles.helpSectionTitle}>Final Statement:</Text>
+                                  <View style={styles.helpSection}>
+                                    {parseFormattedText(script.finalStatement, dynamicStyles.helpSectionContent)}
+                                  </View>
+                                </>
+                              )}
+                            </>
+                          );
+                        })()}
+                      </View>
+                    </>
+                  )}
+                </ScrollView>
+              </View>
+            </View>
+          </Modal>
         </BackgroundWrapper>
       </View>
     </SafeAreaProvider>
