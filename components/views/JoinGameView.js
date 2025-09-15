@@ -1,5 +1,5 @@
-import React, { useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, StatusBar, PanResponder } from 'react-native';
+import React, { useRef, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, StatusBar, PanResponder, BackHandler } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BackgroundWrapper from '../BackgroundWrapper';
 import styles from '../../styles/AppStyles';
@@ -13,7 +13,20 @@ export default function JoinGameView({
   inputError = '',
   dynamicStyles = {},
 }) {
-  // PanResponder for swipe left to go back
+  // Handle Android back button
+  useEffect(() => {
+    const backAction = () => {
+      console.log('🔧 JoinGameView: Android back button pressed, calling onBack');
+      onBack && onBack();
+      return true; // Prevent default behavior
+    };
+
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+
+    return () => backHandler.remove();
+  }, [onBack]);
+
+  // PanResponder for swipe right to go back
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
@@ -22,8 +35,9 @@ export default function JoinGameView({
         return Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && Math.abs(gestureState.dx) > 10;
       },
       onPanResponderRelease: (evt, gestureState) => {
-        // If swiped left (dx > 50), go back
+        // If swiped right (dx > 50), go back
         if (gestureState.dx > 50) {
+          console.log('🔧 JoinGameView: Swipe right detected, calling onBack');
           onBack && onBack();
         }
       },

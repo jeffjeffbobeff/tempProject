@@ -28,7 +28,7 @@ export default function IntroductionView({
   const [showPlayerStatus, setShowPlayerStatus] = useState(false);
   const hasNavigated = useRef(false);
 
-  // Auto-navigate when round changes (e.g., from introduction round 1 to first gameplay round 2)
+  // Auto-navigate when round changes (e.g., from general introduction round 1 to character introductions round 2)
   useEffect(() => {
     if (gameData?.currentRound && gameData.currentRound > 1 && !hasNavigated.current) {
   
@@ -82,8 +82,8 @@ export default function IntroductionView({
     }
     
     try {
-      // Use the current round (1 for introduction)
-      const roundToUpdate = gameData?.currentRound;
+      // Use round 1 for the general introduction
+      const roundToUpdate = 1;
       
       await firebaseService.updatePlayerReady(gameId, userId, readyStatus, roundToUpdate);
     } catch (error) {
@@ -101,14 +101,9 @@ export default function IntroductionView({
     }
     
     try {
-      // Use the current round (1 for introduction)
-      const roundToUpdate = gameData?.currentRound;
+      // Use round 1 for the general introduction
+      const roundToUpdate = 1;
       // console.log('🔧 roundToUpdate:', roundToUpdate);
-      
-      if (roundToUpdate === undefined || roundToUpdate === null) {
-        // console.log('🔧 Early return: no roundToUpdate');
-        return;
-      }
       
       // console.log('🔧 Calling firebaseService.updatePlayerReady with:', { gameId, playerId, readyStatus, roundToUpdate });
       await firebaseService.updatePlayerReady(gameId, playerId, readyStatus, roundToUpdate);

@@ -185,6 +185,15 @@ class GameScriptService {
     };
   }
 
+  // Get humorous accusation option for a game script
+  getHumorousAccusationOption(scriptId) {
+    const script = this.gameScripts[scriptId];
+    if (!script || !script.metadata || !script.metadata.humorousAccusationOption) {
+      return null;
+    }
+    return script.metadata.humorousAccusationOption;
+  }
+
   // Get available game scripts
   getAvailableScripts() {
     return Object.keys(this.gameScripts).map(scriptId => {

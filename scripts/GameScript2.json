@@ -18,6 +18,10 @@
     "victim": "Sheriff Chad",
     "numberOfRounds": 6,
     "backgroundAsset": "../assets/images/backgrounds/OldWestDark.png",
+    "humorousAccusationOption": {
+      "characterName": "The Raccoon Monster",
+      "shortDescription": "A mysterious creature that may or may not exist"
+    },
     "status": "Available",
     "isActive": true,
     "introduction": "Welcome to Sheriffkill Springs, a dusty frontier town where the law is as scarce as honest politicians and the secrets run deeper than a mineshaft. Tonight, the town's peace has been shattered by a most unfortunate incident.\n\nSheriff Chad, the handsome and newly appointed lawman who had been keeping order in this lawless territory, has been found dead, floating face down in a horse trough in the corral behind the Cloak & Dagger Saloon. The circumstances of his demise are as mysterious as the strange lights that have been appearing over the town.\n\nThe swinging doors of The Cloak & Dagger Saloon have been sealed. The territorial marshal is on his way, but for now, you, the colorful cast of characters who call this town home, are trapped within these wooden walls. Each of you carries secrets, motives, and perhaps even the means to have brought about Sheriff Chad's untimely end.\n\nIt now falls to you to unravel this frontier mystery. Examine the evidence, scrutinize the alibis, and expose the hidden truths. Tonight, the greatest drama will not be on the saloon stage, but right here, among yourselves, as you determine:\n\nWho killed Sheriff Chad?"

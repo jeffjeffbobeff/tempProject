@@ -507,14 +507,14 @@ class FirebaseService {
       
       await gameRef.update({
         status: 'IN_PROGRESS',
-        currentRound: 1, // TEMPORARY: Use round 1 instead of 0 to test Firebase compatibility
+        currentRound: 1, // Start with round 1 for general introduction
         roundState: 'ROUND_ACTIVE',
         [`roundData.1`]: {
           readyPlayers: []
         }
       });
       
-      // Initialize all players' roundStates[1] for the introduction round
+      // Initialize all players' roundStates[1] for the general introduction round
       const initialPlayersSnapshot = await gameRef.collection('players').get();
       const initialBatch = this.db.batch();
       
@@ -553,11 +553,22 @@ class FirebaseService {
       const currentRound = gameData.currentRound;
       let nextRound;
       
-      // Special case: advance from introduction (round 1) to round 2
+      // Special case: advance from general introduction (round 1) to character introductions (round 2)
       if (currentRound === 1) {
         await gameRef.update({
           currentRound: 2,
           'roundData.2': {
+            readyPlayers: []
+          }
+        });
+        return;
+      }
+      
+      // Special case: advance from character introductions (round 2) to stories (round 3)
+      if (currentRound === 2) {
+        await gameRef.update({
+          currentRound: 3,
+          'roundData.3': {
             readyPlayers: []
           }
         });
@@ -664,6 +675,40 @@ class FirebaseService {
     } catch (error) {
       console.error('Error submitting accusation:', error);
       throw new Error('Failed to submit accusation');
+    }
+  }
+
+  // Make a specific player accuse randomly
+  async makePlayerAccuseRandomly(gameId, playerId) {
+    try {
+      const gameData = await this.getGameData(gameId);
+      if (!gameData) {
+        throw new Error('Game not found');
+      }
+
+      // Get available characters for accusation
+      const availableCharacters = gameScriptService.getCharacters(gameData.gameScriptId);
+      
+      // Add humorous accusation option if it exists
+      const humorousOption = gameScriptService.getHumorousAccusationOption(gameData.gameScriptId);
+      if (humorousOption) {
+        availableCharacters.push(humorousOption);
+      }
+
+      if (availableCharacters.length === 0) {
+        throw new Error('No characters available for accusation');
+      }
+
+      // Select a random character
+      const randomCharacter = availableCharacters[Math.floor(Math.random() * availableCharacters.length)];
+      
+      // Submit the random accusation
+      await this.submitAccusation(gameId, playerId, randomCharacter.characterName);
+      
+      console.log(`🔧 Made player ${playerId} accuse ${randomCharacter.characterName} randomly`);
+    } catch (error) {
+      console.error('Error making player accuse randomly:', error);
+      throw new Error('Failed to make player accuse randomly');
     }
   }
 

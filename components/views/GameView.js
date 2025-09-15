@@ -31,6 +31,7 @@ export default function GameView({
   const [showPlayerStatus, setShowPlayerStatus] = useState(false);
   const [selectedAccusations, setSelectedAccusations] = useState([]);
   const [accusationSubmitted, setAccusationSubmitted] = useState(false);
+  const [showPlayerAccusationStatus, setShowPlayerAccusationStatus] = useState(false);
 
   useEffect(() => {
     if (scrollViewRef && scrollViewRef.current) {
@@ -69,7 +70,15 @@ export default function GameView({
   // Helper: get accusable characters
   const getAccusableCharacters = () => {
     if (!gameData) return [];
-    return gameScriptService.getCharacters(gameData.gameScriptId);
+    const gameCharacters = gameScriptService.getCharacters(gameData.gameScriptId);
+    
+    // Add humorous accusation option from game script if it exists
+    const humorousOption = gameScriptService.getHumorousAccusationOption(gameData.gameScriptId);
+    if (humorousOption) {
+      return [...gameCharacters, humorousOption];
+    }
+    
+    return gameCharacters;
   };
 
   // Helper: get murderer characters
@@ -93,6 +102,12 @@ export default function GameView({
     allCharacters.forEach(char => {
       voteTotals[char.characterName] = [];
     });
+    
+    // Add humorous accusation option to vote totals if it exists
+    const humorousOption = gameScriptService.getHumorousAccusationOption(gameData.gameScriptId);
+    if (humorousOption) {
+      voteTotals[humorousOption.characterName] = [];
+    }
     
     // Count accusations from each player
     gameData.players.forEach(player => {
@@ -121,6 +136,30 @@ export default function GameView({
     return gameData.players.every(p => 
       p.roundStates?.[gameData.currentRound]?.ready || false
     );
+  };
+
+  // Helper: check if a specific player has made an accusation in round 5.5
+  const hasPlayerAccused = (player) => {
+    if (!player || !player.accusations?.made) return false;
+    return player.accusations.made.some(acc => acc.round === 5.5);
+  };
+
+  // Helper: get accusation status for all players
+  const getAccusationStatus = () => {
+    if (!gameData?.players) return { accused: 0, total: 0, players: [] };
+    
+    const players = gameData.players.map(player => ({
+      ...player,
+      hasAccused: hasPlayerAccused(player)
+    }));
+    
+    const accusedCount = players.filter(p => p.hasAccused).length;
+    
+    return {
+      accused: accusedCount,
+      total: players.length,
+      players: players
+    };
   };
 
   // Helper: get character object
@@ -197,30 +236,14 @@ export default function GameView({
     }
   };
 
-  const handleMakeAllPlayersAccuse = async () => {
-    if (!gameId || !isHost() || !gameData?.players) return;
+  const handleMakePlayerAccuseRandomly = async (playerId) => {
+    if (!gameId || !isHost()) return;
     
     try {
-      const availableCharacters = getAccusableCharacters();
-      
-      // Make all players submit at least one random accusation
-      for (const player of gameData.players) {
-        const hasAccused = player.accusations?.made?.some(acc => acc.round === 5.5);
-        if (!hasAccused) {
-          const randomCharacter = availableCharacters[Math.floor(Math.random() * availableCharacters.length)];
-          if (randomCharacter) {
-            await firebaseService.submitAccusation(gameId, player.userId, randomCharacter.characterName);
-          }
-        }
-      }
-      
-      // After all accusations, mark all players as ready
-      for (const player of gameData.players) {
-        await firebaseService.updatePlayerReady(gameId, player.userId, true, 5.5);
-      }
+      await firebaseService.makePlayerAccuseRandomly(gameId, playerId);
     } catch (error) {
-      console.error('Error making players accuse:', error);
-      alert('Failed to make players accuse.');
+      console.error('Error making player accuse randomly:', error);
+      alert('Failed to make player accuse randomly.');
     }
   };
 
@@ -304,16 +327,56 @@ export default function GameView({
                 </View>
               )}
 
-              {/* Host Controls - Only for Host */}
+              {/* Host Controls - Accusation Status */}
               {isHost() && (
-                <View style={[styles.gameInfo, {alignItems: 'center'}]}>
+                <View style={styles.gameInfo}>
                   <TouchableOpacity
-                    style={[styles.button, styles.gameTestButton, {alignSelf: 'center'}]}
-                    activeOpacity={0.8}
-                    onPress={handleMakeAllPlayersAccuse}
+                    style={styles.collapsibleHeader}
+                    onPress={() => setShowPlayerAccusationStatus(!showPlayerAccusationStatus)}
                   >
-                    <Text style={[dynamicStyles.buttonText, styles.centeredText]}>Make All Players Accuse (Host)</Text>
+                    <Text style={dynamicStyles.collapsibleHeaderText}>
+                      Accusations Made: {getAccusationStatus().accused}/{getAccusationStatus().total}
+                    </Text>
+                    <Text style={dynamicStyles.collapsibleArrow}>
+                      {showPlayerAccusationStatus ? '▼' : '▶'}
+                    </Text>
                   </TouchableOpacity>
+                  
+                  {showPlayerAccusationStatus && (
+                    <View style={styles.playerStatusContainer}>
+                      {getAccusationStatus().players.map((player) => {
+                        const isVirtualPlayer = player.userId.startsWith('player');
+                        
+                        return (
+                          <View key={player.userId} style={styles.playerRow}>
+                            <View style={styles.playerInfo}>
+                              <Text style={dynamicStyles.playerText}>
+                                {player.userId === userId ? 'You' : player.username} ({player.characterName})
+                                {isVirtualPlayer && ' [Virtual]'}
+                              </Text>
+                              <Text style={[dynamicStyles.playerText, { fontSize: 14, opacity: 0.8 }]}>
+                                {player.hasAccused ? '✓ Accusation Made' : '✗ Not Accused'}
+                              </Text>
+                            </View>
+                            
+                            {/* Force Random Guess button only for players who haven't accused */}
+                            {!player.hasAccused && (
+                              <View style={styles.playerControls}>
+                                <TouchableOpacity
+                                  style={[styles.smallButton, styles.notReadyButton]}
+                                  onPress={() => handleMakePlayerAccuseRandomly(player.userId)}
+                                >
+                                  <Text style={dynamicStyles.smallButtonText}>
+                                    Force Random Guess
+                                  </Text>
+                                </TouchableOpacity>
+                              </View>
+                            )}
+                          </View>
+                        );
+                      })}
+                    </View>
+                  )}
                 </View>
               )}
 

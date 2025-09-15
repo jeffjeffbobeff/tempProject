@@ -334,7 +334,7 @@ export default function App() {
             // If game is in progress, navigate to appropriate view based on current round
             if (data?.currentRound === 1 && view !== VIEWS.INTRODUCTION && hasCharacter) {
               setView(VIEWS.INTRODUCTION);
-            } else if (data?.currentRound > 1 && view !== VIEWS.GAME && hasCharacter) {
+            } else if (data?.currentRound >= 2 && view !== VIEWS.GAME && hasCharacter) {
               setView(VIEWS.GAME);
             }
           } else if (data?.status === 'LOBBY' && view !== VIEWS.LOBBY && hasCharacter) {
@@ -547,7 +547,7 @@ export default function App() {
                       // If game is in progress, navigate to appropriate view based on current round
                       if (data?.currentRound === 1 && view !== VIEWS.INTRODUCTION && hasCharacter) {
                         setView(VIEWS.INTRODUCTION);
-                      } else if (data?.currentRound > 1 && view !== VIEWS.GAME && hasCharacter) {
+                      } else if (data?.currentRound >= 2 && view !== VIEWS.GAME && hasCharacter) {
                         setView(VIEWS.GAME);
                       }
                     } else if (data?.status === 'LOBBY' && view !== VIEWS.LOBBY && hasCharacter) {
