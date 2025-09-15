@@ -602,7 +602,7 @@ export default function GameView({
                   {characterScript.accusedOf && (
                     <>
                       <Text style={dynamicStyles.label}>
-                        When you are accused of {characterScript.accusedOf}
+                        Respond to accusations of {characterScript.accusedOf}
                       </Text>
                       <View style={styles.scriptContainer}>
                         {parseFormattedText(characterScript.rebuttal, dynamicStyles.scriptText)}
