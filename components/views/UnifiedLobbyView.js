@@ -177,8 +177,8 @@ export default function UnifiedLobbyView({
     }
     
     invitation += `– To play, you must download the free App\n`;
-    invitation += `– Android: [placeholder Play Store link]\n`;
-    invitation += `– Apple: [placeholder App Store link]\n`;
+    invitation += `– Android: https://play.google.com/store/apps/details?id=com.mobilemystery.murdermysteryparty\n`;
+    invitation += `– Apple: https://apps.apple.com/app/id6751867663\n`;
     invitation += `– Game Code: ${gameId}`;
     
     return invitation;
