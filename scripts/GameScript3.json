@@ -26,6 +26,7 @@
   {
   "Character": "Daba Dooba",
   "Short Description": "Alien performance artist",
+  "Character Details": "You are an avant-garde performance artist who expresses your emotions through eccentric and 'high-concept' art installations. You have a complicated relationship with the Captain and use your art to express your feelings about authority. Your fans eat it up.",
   "Sex": "Any",
   "isMurderer": false,
   "suggestedCostume": "Eccentric, colorful, avant-garde clothing. Possibly adorned with strange, abstract sculptures.",
@@ -52,6 +53,7 @@
   {
   "Character": "Baba Baklava",
   "Short Description": "Owner of the sweet shop",
+  "Character Details": "You are the sweet, elderly shop owner who runs a confectionery business on the space station. But where do you get your exotic ingredients from? You'll never tell.",
   "Sex": "Any",
   "isMurderer": true,
   "suggestedCostume": "A matronly, deceptively sweet-looking outfit with an apron. Perhaps a bit too clean.",
@@ -78,6 +80,7 @@
   {
   "Character": "Rusty Rivet",
   "Short Description": "Chief Engineer",
+  "Character Details": "Half, man, half cybernetic enhancement, you understand machines. You are the station's brilliant but eccentric chief engineer who keeps these ungrateful and ignorant meatbags safe from the horrors of the vacuum of space, separated by mere millimeters of hull. The ship speaks to you like a lover. To what lengths are you willing to go Your cybernetic arm and a deep",
   "Sex": "Male",
   "isMurderer": false,
   "suggestedCostume": "Grease-stained overalls or engineering jumpsuit. One prominent cybernetic arm.",
@@ -104,6 +107,7 @@
   {
   "Character": "Ensign Expendable",
   "Short Description": "Red Shirt",
+  "Character Details": "You are a junior officer who is in way over his head. Despite your inexperience, and no one knowing your first name, often tasked with the most dangerous missions. You are terrified that the next mission will be your last.",
   "Sex": "Any",
   "isMurderer": false,
   "suggestedCostume": "A bright red Starfleet-style uniform. Looks perpetually terrified.",
@@ -130,6 +134,7 @@
   {
   "Character": "Sprock-ette",
   "Short Description": "Unfeeling, unemotional Android",
+  "Character Details": "If you had any emotions at all, it would be annoyance at the commotion concerning the death of the Captain. Your mechanical pulse is steady, and ready for the investigation to come.",
   "Sex": "Female",
   "isMurderer": false,
   "suggestedCostume": "A sleek, perhaps silver or white, form-fitting jumpsuit. A very neutral, logical expression.",
@@ -156,6 +161,7 @@
   {
   "Character": "Nimbus C. Cumulus",
   "Short Description": "Sentient Cloud",
+  "Character Details": "These solid beings are so insensitive to vapor-based life forms like yourself. You freeze all the time and no one hears you complain. Well, maybe just a little bit.",
   "Sex": "Female",
   "isMurderer": false,
   "suggestedCostume": "Draped in white, grey, or iridescent tulle and organza to simulate a cloud. Maybe some battery-powered fairy lights inside for a 'lightning' effect.",
@@ -182,6 +188,7 @@
   {
   "Character": "Commodore Maximus Pummel",
   "Short Description": "Fleet commander",
+  "Character Details": "If there is one thing you hate more than anything, it is weakness. The strong take what they can and the weak take orders from... you.",
   "Sex": "Male",
   "isMurderer": false,
   "suggestedCostume": "A decorated, imposing military uniform. A prosthetic arm. A stern, warlike expression.",
@@ -208,7 +215,8 @@
   {
   "Character": "Ace Rocket",
   "Short Description": "Hot shot pilot",
-  "Sex": "Female",
+  "Character Details": "Your first love, other than yourself, is flying. Your motal enemy, other than Gromulak, is paperwork.",
+  "Sex": "Any",
   "isMurderer": false,
   "suggestedCostume": "A cool, slightly worn pilot's jacket over a jumpsuit. Aviator sunglasses.",
   "suggestedProps": "A ship key on a lanyard, a hip flask, an award for 'Pilot of the Century.'",
@@ -234,6 +242,7 @@
   {
   "Character": "Fixer Finnigan",
   "Short Description": "Smuggler and tinkerer",
+  "Character Details": "You are in the business of procuring 'hard to find' goods for the crew of the station. You have a knack for getting around pesky things like 'rules' and 'security systems'.",
   "Sex": "Male",
   "isMurderer": false,
   "suggestedCostume": "Slightly shady, utilitarian clothing. A long coat with many pockets. Looks like he's always looking over his shoulder.",
@@ -260,6 +269,7 @@
   {
   "Character": "Sue M. Awl",
   "Short Description": "Space Lawyer",
+  "Character Details": "You are a lawyer who is here to represent the interests of the crew of the statio... just kidding, you're here to get paid.",
   "Sex": "Female",
   "isMurderer": false,
   "suggestedCostume": "A sharp, expensive-looking power suit. Impeccable hair and makeup.",

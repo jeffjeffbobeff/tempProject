@@ -25,7 +25,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import HomeView from './components/views/HomeView';
 import JoinGameView from './components/views/JoinGameView';
 import GameSelectionView from './components/views/GameSelectionView';
-import CharacterSelectionView from './components/views/CharacterSelectionView';
 import IntroductionView from './components/views/IntroductionView';
 import GameView from './components/views/GameView';
 import gameScriptService from './gameScriptService';
@@ -34,6 +33,7 @@ import firebaseService from './firebase';
 import { useDynamicStyles } from './utils/styles';
 import { parseFormattedText } from './utils/textFormatting';
 import LobbyView from './components/views/LobbyView';
+import UnifiedLobbyView from './components/views/UnifiedLobbyView';
 import Clipboard from '@react-native-clipboard/clipboard';
 import MyGamesView from './components/views/MyGamesView';
 import OnboardingView from './components/views/OnboardingView';
@@ -58,7 +58,6 @@ const VIEWS = {
   INTRODUCTION: 'INTRODUCTION',
   GAME: 'GAME',
   JOIN_GAME: 'JOIN_GAME',
-  CHARACTER_SELECTION: 'CHARACTER_SELECTION',
   MY_GAMES: 'MY_GAMES',
 };
 
@@ -104,7 +103,6 @@ export default function App() {
   // ScrollView refs for scroll to top functionality
   const gameScrollViewRef = useRef<ScrollView>(null);
   const lobbyScrollViewRef = useRef<ScrollView>(null);
-  const characterSelectionScrollViewRef = useRef<ScrollView>(null);
   const gameSelectionScrollViewRef = useRef<ScrollView>(null);
   const introductionScrollViewRef = useRef<ScrollView>(null);
 
@@ -269,15 +267,15 @@ export default function App() {
           setView(VIEWS.GAME);
         }
         
-        // If player doesn't have a character, they should stay in CHARACTER_SELECTION
-        if (!hasCharacter && view !== VIEWS.CHARACTER_SELECTION) {
-          setView(VIEWS.CHARACTER_SELECTION);
+        // If player doesn't have a character, they should stay in LOBBY
+        if (!hasCharacter && view !== VIEWS.LOBBY) {
+          setView(VIEWS.LOBBY);
         }
       });
       setGameSubscription(() => subscription);
 
-      // Navigate to character selection
-      setView(VIEWS.CHARACTER_SELECTION);
+      // Navigate to lobby
+      setView(VIEWS.LOBBY);
     } catch (error: any) {
       console.error('Error joining game:', error);
       setJoinInputError(`Failed to join game: ${error.message || 'Unknown error'}`);
@@ -345,9 +343,9 @@ export default function App() {
             setView(VIEWS.GAME);
           }
           
-          // If player doesn't have a character, they should stay in CHARACTER_SELECTION
-          if (!hasCharacter && view !== VIEWS.CHARACTER_SELECTION) {
-            setView(VIEWS.CHARACTER_SELECTION);
+          // If player doesn't have a character, they should stay in LOBBY
+          if (!hasCharacter && view !== VIEWS.LOBBY) {
+            setView(VIEWS.LOBBY);
           }
         });
         setGameSubscription(() => subscription);
@@ -558,15 +556,15 @@ export default function App() {
                       setView(VIEWS.GAME);
                     }
                     
-                    // If player doesn't have a character, they should stay in CHARACTER_SELECTION
-                    if (!hasCharacter && view !== VIEWS.CHARACTER_SELECTION) {
-                      setView(VIEWS.CHARACTER_SELECTION);
+                    // If player doesn't have a character, they should stay in LOBBY
+                    if (!hasCharacter && view !== VIEWS.LOBBY) {
+                      setView(VIEWS.LOBBY);
                     }
                   });
                   setGameSubscription(() => subscription);
                   
-                  // Navigate to character selection (not introduction)
-                  setView(VIEWS.CHARACTER_SELECTION);
+                  // Navigate to lobby (not introduction)
+                  setView(VIEWS.LOBBY);
                 } catch (error: any) {
                   console.error('Error launching game:', error);
                   // Show error to user instead of pretending it worked
@@ -583,43 +581,6 @@ export default function App() {
             />
           )}
           
-          {view === VIEWS.CHARACTER_SELECTION && (
-            <CharacterSelectionView
-              gameId={gameId}
-              gameData={gameData}
-              userId={username || 'anonymous'}
-              dynamicStyles={dynamicStyles}
-              onSelectCharacter={async (character: any) => {
-                try {
-                  // Check if player is already in the game (for joining existing games)
-                  const currentGameData = await firebaseService.getGameData(gameId);
-                  const existingPlayer = currentGameData?.players?.find((p: any) => p.userId === username);
-                  
-                  if (!existingPlayer) {
-                    // Player not in game yet, add them first (for new games)
-                    const joinResult = await firebaseService.joinGame(gameId, username || 'anonymous', username || 'Anonymous Player');
-                  }
-                  
-                  // Now select the character
-                  await firebaseService.selectCharacter(gameId, username || 'anonymous', character.characterName);
-                  
-                  // Navigate to lobby - the real-time listener will update gameData
-                  setView(VIEWS.LOBBY);
-                } catch (error: any) {
-                  console.error('Error selecting character:', error);
-                  Alert.alert('Error', 'Failed to select character: ' + (error.message || 'Unknown error'));
-                }
-              }}
-              onKeepCharacter={() => {
-                // TODO: Navigate to lobby
-                setView(VIEWS.LOBBY);
-              }}
-              onRemoveVirtualPlayer={() => {
-                // TODO: Handle virtual player removal
-              }}
-              scrollViewRef={characterSelectionScrollViewRef}
-            />
-          )}
           
           {view === VIEWS.LOBBY && (() => {
             // Helper: get current player
@@ -722,10 +683,6 @@ export default function App() {
               }
             };
 
-            // Change character
-            const handleChangeCharacter = () => {
-              setView(VIEWS.CHARACTER_SELECTION);
-            };
 
             // Back to home
             const handleBackToHome = () => {
@@ -733,18 +690,15 @@ export default function App() {
             };
 
             return (
-              <LobbyView
+              <UnifiedLobbyView
                 gameId={gameId}
                 gameData={gameData}
                 userId={username || 'anonymous'}
                 dynamicStyles={dynamicStyles}
                 isHost={isHost()}
                 onCopyGameCode={handleCopyGameCode}
-                onAddVirtualPlayer={handleAddVirtualPlayer}
-                availableCharactersForVirtuals={getAvailableCharactersForVirtuals()}
                 onStartGame={handleStartGame}
                 canStartGame={canStartGame}
-                onChangeCharacter={handleChangeCharacter}
                 onBackToHome={handleBackToHome}
                 scrollViewRef={lobbyScrollViewRef}
               />

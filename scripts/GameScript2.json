@@ -30,6 +30,7 @@
   {
       "Character": "The Cactus Kid",
       "Short Description": "Polite Teen Outlaw",
+      "Character Details": "A young outlaw with a heart of gold who dreams of being a real bad guy one day.",
       "Sex": "Any",
       "isMurderer": true,
       "suggestedCostume": "Please provide suggested costume for The Cactus Kid",
@@ -56,6 +57,7 @@
     {
       "Character": "Belle Bottoms",
       "Short Description": "Frontier Saloon Owner",
+      "Character Details": "The cunning and charismatic owner of the Cloak & Dagger Saloon, Belle is the real power behind Sheriffkill Springs.",
       "Sex": "F",
       "isMurderer": false,
       "suggestedCostume": "Please provide suggested costume for Belle Bottoms",
@@ -82,6 +84,7 @@
     {
       "Character": "Wyatt Burp",
       "Short Description": "Washed-up, Drunkard Ex-lawman",
+      "Character Details": "A former lawman who has fallen on hard times and now spends his days drowning his sorrows at the Cloak & Dagger Saloon. Despite his current state, Wyatt still has the instincts of a lawman and knows more about the town's underbelly than he lets on.",
       "Sex": "M",
       "isMurderer": false,
       "suggestedCostume": "Please provide suggested costume for Wyatt Burp",
@@ -108,6 +111,7 @@
     {
       "Character": "Nurse Holliday",
       "Short Description": "Gambling Dentist",
+      "Character Details": "The town's skilled dentist and medical professional who recently arrived in Sheriffkill Springs. She's feisty, intelligent, and can just as easily extract a tooth as a gun from its holster. Her relationship with Sheriff Chad was the talk of the town.",
       "Sex": "F",
       "isMurderer": false,
       "suggestedCostume": "Please provide suggested costume for Nurse Holliday",
@@ -134,6 +138,7 @@
     {
       "Character": "Dusty Trails",
       "Short Description": "Grizzled Old Prospector",
+      "Character Details": "An eccentric prospector who claims to NOT have found a secret silver mine in the hills. He's protective of his Non-discovery and often talks about mysterious creatures and strange happenings.",
       "Sex": "M",
       "isMurderer": false,
       "suggestedCostume": "Please provide suggested costume for Dusty Trails",
@@ -160,6 +165,7 @@
     {
       "Character": "Gigi LaFlamme",
       "Short Description": "Singer and Can-Can Dancer",
+      "Character Details": "A beautiful and talented traveling performer who has recently arrived in Sheriffkill Springs. Her arrival has caused quite a stir, especially among the womenfolk, who are suspicions of her French coquetry. She's charming, talented, and has secrets of her own.",
       "Sex": "F",
       "isMurderer": false,
       "suggestedCostume": "Please provide suggested costume for Gigi LaFlamme",
@@ -186,6 +192,7 @@
     {
       "Character": "Phineas Phileas Fogg Jr.",
       "Short Description": "Steampunk Inventor",
+      "Character Details": "An eccentric inventor and scientist who has come to Sheriffkill Springs to conduct experiments. He's brilliant but often misunderstood, working on mysterious contraptions that the townsfolk find suspicious. His inventions may hold the key to the strange happenings in town.",
       "Sex": "Any",
       "isMurderer": false,
       "suggestedCostume": "Please provide suggested costume for Phineas Phileas Fogg Jr.",
@@ -212,6 +219,7 @@
     {
       "Character": "Mayor Augustus Maywho",
       "Short Description": "Town Mayor",
+      "Character Details": "The ambitious mayor of Sheriffkill Springs who has grand plans for the town's future. His business ventures, however, may or may not be a conflict of interest with his mayoral duties.",
       "Sex": "M",
       "isMurderer": false,
       "suggestedCostume": "Please provide suggested costume for Mayor Augustus Maywho",

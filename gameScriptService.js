@@ -94,6 +94,7 @@ class GameScriptService {
       sex: character.Sex,
       inviteDescription: character['Invite Description'],
       introduction: character.Introduction,
+      characterDetails: character['Character Details'],
       isMurderer: character.isMurderer || character.Character === 'Penny Prattle', // Use new field or fallback
       
       // Character metadata

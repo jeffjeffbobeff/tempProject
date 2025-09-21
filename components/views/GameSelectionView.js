@@ -128,38 +128,65 @@ export default function GameSelectionView({ availableGameScripts = [], onBack, o
         <Modal
           visible={showDetails}
           transparent={true}
-          animationType="slide"
+          animationType="fade"
           onRequestClose={() => setShowDetails(false)}
         >
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
+              {/* Close Button */}
               <TouchableOpacity
                 style={styles.modalCloseX}
-                activeOpacity={0.8}
                 onPress={() => setShowDetails(false)}
               >
                 <Text style={styles.modalCloseXText}>✕</Text>
               </TouchableOpacity>
-              <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={true}>
+
+              {/* Content */}
+              <ScrollView showsVerticalScrollIndicator={true}>
                 {detailsScript ? (
-                  <>
-                    <Text style={dynamicStyles && dynamicStyles.modalTitle ? dynamicStyles.modalTitle : styles.modalTitle}>{detailsScript.title}</Text>
-                    <Text style={dynamicStyles && dynamicStyles.modalDescription ? dynamicStyles.modalDescription : styles.modalDescription}>{detailsScript.description}</Text>
-                    <View style={styles.modalInfo}>
-                      <Text style={dynamicStyles && dynamicStyles.modalInfoLabel ? dynamicStyles.modalInfoLabel : styles.modalInfoLabel}>Duration:</Text>
-                      <Text style={dynamicStyles && dynamicStyles.modalInfoText ? dynamicStyles.modalInfoText : styles.modalInfoText}>{detailsScript.estimatedDuration} minutes</Text>
+                  <View>
+                    <Text style={styles.modalTitle}>
+                      {detailsScript.title}
+                    </Text>
+                    
+                    <Text style={styles.modalDescription}>
+                      {detailsScript.description}
+                    </Text>
+
+                    <View style={{ marginTop: 20, marginBottom: 15 }}>
+                      <Text style={{ color: '#fff', fontSize: 16, marginBottom: 5 }}>
+                        Duration: {detailsScript.estimatedDuration} minutes
+                      </Text>
                     </View>
-                    <View style={styles.modalInfo}>
-                      <Text style={dynamicStyles && dynamicStyles.modalInfoLabel ? dynamicStyles.modalInfoLabel : styles.modalInfoLabel}>Setting:</Text>
-                      <Text style={dynamicStyles && dynamicStyles.modalInfoText ? dynamicStyles.modalInfoText : styles.modalInfoText}>{detailsScript.setting}</Text>
+
+                    <View style={{ marginBottom: 15 }}>
+                      <Text style={{ color: '#fff', fontSize: 16, marginBottom: 5 }}>
+                        Setting: {detailsScript.setting}
+                      </Text>
                     </View>
-                    <View style={styles.modalInfo}>
-                      <Text style={dynamicStyles && dynamicStyles.modalInfoLabel ? dynamicStyles.modalInfoLabel : styles.modalInfoLabel}>Time Period:</Text>
-                      <Text style={dynamicStyles && dynamicStyles.modalInfoText ? dynamicStyles.modalInfoText : styles.modalInfoText}>{detailsScript.timePeriod}</Text>
+
+                    <View style={{ marginBottom: 15 }}>
+                      <Text style={{ color: '#fff', fontSize: 16, marginBottom: 5 }}>
+                        Time Period: {detailsScript.timePeriod}
+                      </Text>
                     </View>
-                  </>
+
+                    <View style={{ marginBottom: 15 }}>
+                      <Text style={{ color: '#fff', fontSize: 16, marginBottom: 5 }}>
+                        Difficulty: {detailsScript.difficulty}
+                      </Text>
+                    </View>
+
+                    <View style={{ marginBottom: 15 }}>
+                      <Text style={{ color: '#fff', fontSize: 16, marginBottom: 5 }}>
+                        Players: {detailsScript.maxPlayers}
+                      </Text>
+                    </View>
+                  </View>
                 ) : (
-                  <Text style={dynamicStyles && dynamicStyles.modalTitle ? dynamicStyles.modalTitle : styles.modalTitle}>No game details available</Text>
+                  <Text style={styles.modalTitle}>
+                    No game details available
+                  </Text>
                 )}
               </ScrollView>
             </View>

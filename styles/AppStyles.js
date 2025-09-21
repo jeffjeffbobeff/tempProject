@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
   button: {
     width: 250,
     backgroundColor: '#3A3F47',
-    paddingVertical: 14,
+    paddingVertical: 10,
     borderRadius: 8,
     marginTop: 16,
     alignItems: 'center',
@@ -84,6 +84,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     letterSpacing: 1,
+  },
+  readyButton: {
+    backgroundColor: '#4CAF50',
+  },
+  notReadyButton: {
+    backgroundColor: '#FF9800',
   },
   error: {
     color: '#ff6b6b',
@@ -748,6 +754,88 @@ const styles = StyleSheet.create({
     width: '90%',
     alignSelf: 'center',
     backgroundColor: 'transparent',
+  },
+  
+  // New styles for UnifiedLobbyView
+  inviteSettingsContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 8,
+    padding: 16,
+    marginTop: 8,
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    justifyContent: 'space-between',
+  },
+  textInput: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 4,
+    padding: 8,
+    color: '#fff',
+    fontSize: 16,
+    flex: 1,
+    marginLeft: 12,
+  },
+  pickerRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginLeft: 12,
+    flex: 1,
+  },
+  pickerOption: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  pickerOptionSelected: {
+    backgroundColor: '#4CAF50',
+  },
+  pickerOptionText: {
+    color: '#fff',
+    fontSize: 14,
+  },
+  pickerOptionTextSelected: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  characterActions: {
+    flexDirection: 'column',
+    gap: 8,
+  },
+  characterButtonRow: {
+    flexDirection: 'row',
+    width: '100%',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#2C2C2C',
+    borderRadius: 12,
+    padding: 24,
+    width: '90%',
+    maxWidth: 400,
+  },
+  modalTitle: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  modalDescription: {
+    color: '#ccc',
+    fontSize: 16,
+    lineHeight: 24,
+    textAlign: 'center',
   },
 });
 
