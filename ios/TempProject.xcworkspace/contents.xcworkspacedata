@@ -5,7 +5,7 @@
       location = "group:Assets.xcassets">
    </FileRef>
    <FileRef
-      location = "group:TempProject.xcodeproj">
+      location = "group:Murder Mystery Party.xcodeproj">
    </FileRef>
    <FileRef
       location = "group:Pods/Pods.xcodeproj">
